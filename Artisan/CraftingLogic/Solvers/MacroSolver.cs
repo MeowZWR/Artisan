@@ -10,7 +10,7 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class MacroSolverDefinition : ISolverDefinition
 {
-    public string MouseoverDescription { get; set; } = "This is the equivalent of an in-game macro, with less restrictions.";
+    public string MouseoverDescription { get; set; } = "相当于游戏内置宏，但限制更少。";
 
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
@@ -19,7 +19,7 @@ public class MacroSolverDefinition : ISolverDefinition
             if (m.Steps.Count == 0) continue;
 
             var statsOk = m.Options.MinCraftsmanship <= craft.StatCraftsmanship && m.Options.MinControl <= craft.StatControl && m.Options.MinCP <= craft.StatCP;
-            yield return new(this, m.ID, 0, $"Macro: {m.Name}", statsOk ? "" : "You do not meet the minimum stats for this macro");
+            yield return new(this, m.ID, 0, $"宏: {m.Name}", statsOk ? "" : "你未达到此宏的最低属性要求");
         }
     }
 

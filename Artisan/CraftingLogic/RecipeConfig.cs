@@ -79,21 +79,21 @@ public class RecipeConfig
     public bool DrawFood(bool hasButton = false)
     {
         bool changed = false;
-        ImGuiEx.TextV("Food Usage:");
+        ImGuiEx.TextV("食物使用：");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##foodBuff", FoodName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.FoodName})"))
+                if (ImGui.Selectable($"默认 ({P.Config.DefaultConsumables.FoodName})"))
                 {
                     requiredFood = Default;
                     requiredFoodHQ = false;
                     changed = true;
                 }
             }
-            if (ImGui.Selectable("Disable"))
+            if (ImGui.Selectable("禁用"))
             {
                 requiredFood = Disabled;
                 requiredFoodHQ = false;
@@ -125,21 +125,21 @@ public class RecipeConfig
     public bool DrawPotion(bool hasButton = false)
     {
         bool changed = false;
-        ImGuiEx.TextV("Medicine Usage:");
+        ImGuiEx.TextV("药水使用：");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##potBuff", PotionName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.PotionName})"))
+                if (ImGui.Selectable($"默认 ({P.Config.DefaultConsumables.PotionName})"))
                 {
                     requiredPotion = Default;
                     requiredPotionHQ = false;
                     changed = true;
                 }
             }
-            if (ImGui.Selectable("Disable"))
+            if (ImGui.Selectable("禁用"))
             {
                 requiredPotion = Disabled;
                 requiredPotionHQ = false;
@@ -171,20 +171,20 @@ public class RecipeConfig
     public bool DrawManual(bool hasButton = false)
     {
         bool changed = false;
-        ImGuiEx.TextV("Manual Usage:");
+        ImGuiEx.TextV("指南使用：");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##manualBuff", ManualName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.ManualName})"))
+                if (ImGui.Selectable($"默认 ({P.Config.DefaultConsumables.ManualName})"))
                 {
                     requiredManual = Default;
                     changed = true;
                 }
             }
-            if (ImGui.Selectable("Disable"))
+            if (ImGui.Selectable("禁用"))
             {
                 requiredManual = Disabled;
                 changed = true;
@@ -207,20 +207,20 @@ public class RecipeConfig
     public bool DrawSquadronManual(bool hasButton = false)
     {
         bool changed = false;
-        ImGuiEx.TextV("Squadron Manual:");
+        ImGuiEx.TextV("军用指南：");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##squadronManualBuff", SquadronManualName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.SquadronManualName})"))
+                if (ImGui.Selectable($"默认 ({P.Config.DefaultConsumables.SquadronManualName})"))
                 {
                     requiredSquadronManual = Default;
                     changed = true;
                 }
             }
-            if (ImGui.Selectable("Disable"))
+            if (ImGui.Selectable("禁用"))
             {
                 requiredSquadronManual = Disabled;
                 changed = true;
@@ -241,7 +241,7 @@ public class RecipeConfig
     public bool DrawSolver(CraftState craft, bool hasButton = false, bool liveStats = true)
     {
         bool changed = false;
-        ImGuiEx.TextV($"Solver:");
+        ImGuiEx.TextV($"解算器：");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         var solver = CraftingProcessor.GetSolverForRecipe(this, craft);

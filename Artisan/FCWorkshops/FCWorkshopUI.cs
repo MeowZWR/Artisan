@@ -28,19 +28,19 @@ namespace Artisan.FCWorkshops
                 NumberOfLoops = 1;
             }
 
-            ImGui.TextWrapped($"In this tab, you can browse all the FC Workshop projects in the game. " +
-                $"It is broken into 3 main sections. The first is an overview of the full project. " +
-                $"The second breaks down each of the parts. " +
-                $"The last is each of the phases. " +
-                $"In each section, you can click a button to create a crafting list with all you " +
-                $"need to craft that particular section.");
+            ImGui.TextWrapped($"在此选项卡中, 你可以浏览游戏内所有的部队工房制作项目。 " +
+                $"包含3个部分. 第一部分展示项目信息概览。 " +
+                $"第二部分展示每个部件." +
+                $"第三个部分展示每个阶段。" +
+                $"在每个部分，你可以点击“创建制作清单”按钮来创建一个制作清单，" +
+                $"其中包含制作该部分所需要的一切素材的清单。");
 
 
             ImGui.Separator();
             string preview = SelectedProject != 0 ? LuminaSheets.ItemSheet[LuminaSheets.WorkshopSequenceSheet[SelectedProject].ResultItem.RowId].Name.ToString() : "";
             if (ImGui.BeginCombo("###Workshop Project", preview))
             {
-                ImGui.Text("Search");
+                ImGui.Text("搜索");
                 ImGui.SameLine();
                 ImGui.InputText("###ProjectSearch", ref Search, 100);
 
@@ -66,7 +66,7 @@ namespace Artisan.FCWorkshops
             {
                 var project = LuminaSheets.WorkshopSequenceSheet[SelectedProject];
 
-                if (ImGui.CollapsingHeader("Project Information"))
+                if (ImGui.CollapsingHeader("项目信息"))
                 {
                     if (ImGui.BeginTable($"FCWorkshopProjectContainer", 2, ImGuiTableFlags.Resizable))
                     {
@@ -74,15 +74,15 @@ namespace Artisan.FCWorkshops
 
                         ImGui.TableNextColumn();
 
-                        ImGuiEx.Text($"Selected project:");
+                        ImGuiEx.Text($"选中的项目：");
                         ImGui.TableNextColumn();
                         ImGui.Text($"{project.ResultItem.Value.Name.ToString()}");
                         ImGui.TableNextColumn();
-                        ImGuiEx.Text($"Number of parts:");
+                        ImGuiEx.Text($"部件编号：");
                         ImGui.TableNextColumn();
                         ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).Count()}");
                         ImGui.TableNextColumn();
-                        ImGuiEx.Text($"Total number of phases:");
+                        ImGuiEx.Text($"阶段总数：");
                         ImGui.TableNextColumn();
                         ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).Count()}");
 
@@ -90,10 +90,10 @@ namespace Artisan.FCWorkshops
                     }
                     if (ImGui.BeginTable($"###FCWorkshopProjectItemsContainer", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
                     {
-                        ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
-                        ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
-                        ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
-                        if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
+                        ImGui.TableSetupColumn($"物品", ImGuiTableColumnFlags.WidthFixed);
+                        ImGui.TableSetupColumn($"所需总数", ImGuiTableColumnFlags.WidthFixed);
+                        ImGui.TableSetupColumn($"包裹库存", ImGuiTableColumnFlags.WidthFixed);
+                        if (RetainerInfo.ATools) ImGui.TableSetupColumn($"雇员", ImGuiTableColumnFlags.WidthFixed);
 
                         ImGui.TableHeadersRow();
 
@@ -144,19 +144,19 @@ namespace Artisan.FCWorkshops
 
                     ImGui.InputInt("Number of Times###LoopProject", ref NumberOfLoops);
 
-                    if (ImGui.Button($"Create Crafting List for this Project", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                    if (ImGui.Button($"为此项目创建制作清单", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                     {
-                        Notify.Info($"Creating List. Please wait.");
-                        Task.Run(() => CreateProjectList(project, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                        Notify.Info($"正在创建清单，请等待...");
+                        Task.Run(() => CreateProjectList(project, false)).ContinueWith((_) => Notify.Success("部队工房清单已创建"));
                     }
 
-                    if (ImGui.Button($"Create Crafting List for this Project (Including pre-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                    if (ImGui.Button($"为此项目创建制作清单（包含前置配方）", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                     {
-                        Notify.Info($"Creating List. Please wait.");
-                        Task.Run(() => CreateProjectList(project, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                        Notify.Info($"正在创建清单，请等待...");
+                        Task.Run(() => CreateProjectList(project, true)).ContinueWith((_) => Notify.Success("部队工房清单已创建"));
                     }
                 }
-                if (ImGui.CollapsingHeader("Project Parts"))
+                if (ImGui.CollapsingHeader("项目部件"))
                 {
                     ImGui.Indent();
                     string partNum = "";
@@ -171,11 +171,11 @@ namespace Artisan.FCWorkshops
                                 ImGui.TableSetupColumn($"###Phases{part.RowId}", ImGuiTableColumnFlags.WidthFixed);
                                 ImGui.TableNextColumn();
 
-                                ImGuiEx.Text($"Part Type:");
+                                ImGuiEx.Text($"部件类型：");
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{part.CompanyCraftType.Value.Name.ToString()}");
                                 ImGui.TableNextColumn();
-                                ImGuiEx.Text($"Number of phases:");
+                                ImGuiEx.Text($"阶段数量：");
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{part.CompanyCraftProcess.Where(x => x.RowId > 0).Count()}");
                                 ImGui.TableNextColumn();
@@ -184,10 +184,10 @@ namespace Artisan.FCWorkshops
                             }
                             if (ImGui.BeginTable($"###FCWorkshopPartItemsContainer{part.RowId}", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
                             {
-                                ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
-                                if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
+                                ImGui.TableSetupColumn($"物品", ImGuiTableColumnFlags.WidthFixed);
+                                ImGui.TableSetupColumn($"所需总数", ImGuiTableColumnFlags.WidthFixed);
+                                ImGui.TableSetupColumn($"包裹库存", ImGuiTableColumnFlags.WidthFixed);
+                                if (RetainerInfo.ATools) ImGui.TableSetupColumn($"雇员", ImGuiTableColumnFlags.WidthFixed);
                                 ImGui.TableHeadersRow();
 
                                 Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
@@ -235,26 +235,26 @@ namespace Artisan.FCWorkshops
                                 ImGui.EndTable();
                             }
 
-                            ImGui.InputInt("Number of Times###LoopPart", ref NumberOfLoops);
+                            ImGui.InputInt("次数###LoopPart", ref NumberOfLoops);
 
 
-                            if (ImGui.Button($"Create Crafting List for this Part", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                            if (ImGui.Button($"为此部件创建制作清单", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                             {
-                                Notify.Info($"Creating List. Please wait.");
-                                Task.Run(() => CreatePartList(part, partNum, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                Notify.Info($"正在创建清单，请等待...");
+                                Task.Run(() => CreatePartList(part, partNum, false)).ContinueWith((_) => Notify.Success("部队工房清单已创建"));
                             }
 
-                            if (ImGui.Button($"Create Crafting List for this Part (Including pre-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                            if (ImGui.Button($"为此项目创建制作清单（包含前置配方）", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                             {
-                                Notify.Info($"Creating List. Please wait.");
-                                Task.Run(() => CreatePartList(part, partNum, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                Notify.Info($"正在创建清单，请等待...");
+                                Task.Run(() => CreatePartList(part, partNum, true)).ContinueWith((_) => Notify.Success("部队工房清单已创建"));
                             }
                         }
                     }
                     ImGui.Unindent();
                 }
 
-                if (ImGui.CollapsingHeader("Project Phases"))
+                if (ImGui.CollapsingHeader("项目阶段"))
                 {
                     string pNum = "";
                     foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
@@ -264,16 +264,16 @@ namespace Artisan.FCWorkshops
                         pNum = part.CompanyCraftType.Value.Name.ToString();
                         foreach (var phase in part.CompanyCraftProcess.Where(x => x.RowId > 0))
                         {
-                            if (ImGui.CollapsingHeader($"{pNum} - Phase {phaseNum}"))
+                            if (ImGui.CollapsingHeader($"{pNum} - 阶段 {phaseNum}"))
                             {
                                 if (ImGui.BeginTable($"###FCWorkshopPhaseContainer{phase.RowId}", RetainerInfo.ATools ? 6 : 5, ImGuiTableFlags.Borders))
                                 {
-                                    ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
-                                    ImGui.TableSetupColumn($"Set Quantity", ImGuiTableColumnFlags.WidthFixed);
-                                    ImGui.TableSetupColumn($"Sets Required", ImGuiTableColumnFlags.WidthFixed);
-                                    ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
-                                    ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
-                                    if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableSetupColumn($"物品", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableSetupColumn($"每合建需求数量", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableSetupColumn($"合建次数", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableSetupColumn($"需求总数量", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableSetupColumn($"包裹库存", ImGuiTableColumnFlags.WidthFixed);
+                                    if (RetainerInfo.ATools) ImGui.TableSetupColumn($"雇员", ImGuiTableColumnFlags.WidthFixed);
                                     ImGui.TableHeadersRow();
 
                                     foreach (var item in phase.Value.SupplyItems().Where(x => x.SupplyItem.RowId > 0))
@@ -316,18 +316,18 @@ namespace Artisan.FCWorkshops
                                     ImGui.EndTable();
                                 }
 
-                                ImGui.InputInt("Number of Times###LoopPhase", ref NumberOfLoops);
+                                ImGui.InputInt("次数###LoopPhase", ref NumberOfLoops);
 
-                                if (ImGui.Button($"Create Crafting List for this Phase###PhaseButton{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                                if (ImGui.Button($"为此阶段创建制作清单###PhaseButton{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                                 {
-                                    Notify.Info($"Creating List. Please wait.");
-                                    Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                    Notify.Info($"正在创建清单，请等待...");
+                                    Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, false)).ContinueWith((_) => Notify.Success("部队工房清单已创建"));
                                 }
 
-                                if (ImGui.Button($"Create Crafting List for this Phase (Including pre-crafts)###PhaseButtonPC{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                                if (ImGui.Button($"为此阶段创建制作清单（包含前置配方）###PhaseButtonPC{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                                 {
-                                    Notify.Info($"Creating List. Please wait.");
-                                    Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                    Notify.Info($"正在创建清单，请等待...");
+                                    Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, true)).ContinueWith((_) => Notify.Success("部队工房清单已创建"));
                                 }
 
                             }
@@ -345,7 +345,7 @@ namespace Artisan.FCWorkshops
             if (existingList == null)
             {
                 existingList = new NewCraftingList();
-                existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} - Part {partNum} x{NumberOfLoops}";
+                existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} - 部件 {partNum} x{NumberOfLoops}";
                 existingList.SetID();
                 existingList.Save(true);
             }
@@ -385,11 +385,11 @@ namespace Artisan.FCWorkshops
                 existingList = new NewCraftingList();
                 if (projectOverride != null)
                 {
-                    existingList.Name = $"{projectOverride.Value.ResultItem.Value.Name.ToString()} - {partNum}, Phase {phaseNum} x{NumberOfLoops}";
+                    existingList.Name = $"{projectOverride.Value.ResultItem.Value.Name.ToString()} - {partNum}, 阶段 {phaseNum} x{NumberOfLoops}";
                 }
                 else
                 {
-                    existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} - {partNum}, Phase {phaseNum} x{NumberOfLoops}";
+                    existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} - {partNum}, 阶段 {phaseNum} x{NumberOfLoops}";
                 }
                 existingList.SetID();
                 existingList.Save(true);
@@ -405,7 +405,7 @@ namespace Artisan.FCWorkshops
                         var recipeID = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == supplyItemID);
                         if (includePrecraft)
                         {
-                            Svc.Log.Debug($"I want to add {recipeID.ItemResult.Value.Name.ToDalamudString().ToString()} {timesToAdd} times");
+                            Svc.Log.Debug($"我想添加 {recipeID.ItemResult.Value.Name.ToDalamudString().ToString()} {timesToAdd} 次");
                             CraftingListUI.AddAllSubcrafts(recipeID, existingList, timesToAdd);
                         }
 

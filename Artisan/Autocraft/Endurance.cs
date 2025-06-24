@@ -71,7 +71,7 @@ namespace Artisan.Autocraft
 
         internal static string RecipeName
         {
-            get => RecipeID == 0 ? "No Recipe Selected" : LuminaSheets.RecipeSheet[RecipeID].ItemResult.Value.Name.ToDalamudString().ToString().Trim();
+            get => RecipeID == 0 ? "未选中配方" : LuminaSheets.RecipeSheet[RecipeID].ItemResult.Value.Name.ToDalamudString().ToString().Trim();
         }
 
         internal static void ToggleEndurance(bool enable)
@@ -99,24 +99,24 @@ namespace Artisan.Autocraft
         {
             if (CraftingListUI.Processing)
             {
-                ImGui.TextWrapped("Processing list...");
+                ImGui.TextWrapped("正在处理清单...");
                 return;
             }
 
-            ImGui.TextWrapped("Endurance mode is Artisan's way to repeat the same craft over and over, either so many times or until you run out of materials. It has full capabilities to automatically repair your gear once a piece is under a certain percentage, use food/potions/exp manuals and extract materia from spiritbonding. Please note these settings are independent of crafting list settings, and only intended to be used to craft the one item repeatedly.");
+            ImGui.TextWrapped("耐力模式是Artisan一遍又一遍地重复制作相同配方的方式，直到完成指定数量或用完素材。它具有完整的功能：当身上的某件装备低于设定的耐久度会自动修理你的装备、可以自动使用食物/药水/指南、装备精炼度满值时精制魔晶石。请注意，这里的设置是独立的，不会影响制作清单的设置，仅用于重复制作一件物品。");
             ImGui.Separator();
             ImGui.Spacing();
 
             if (RecipeID == 0)
             {
-                ImGuiEx.TextV(ImGuiColors.DalamudRed, "No recipe selected");
+                ImGuiEx.TextV(ImGuiColors.DalamudRed, "未选中配方");
             }
             else
             {
                 if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
                     ImGui.BeginDisabled();
 
-                if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
+                if (ImGui.Checkbox("启用耐力模式", ref enable))
                 {
                     ToggleEndurance(enable);
                 }
@@ -128,23 +128,23 @@ namespace Artisan.Autocraft
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
                     {
                         ImGui.BeginTooltip();
-                        ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.");
+                        ImGui.Text($"你不能开始耐力模式，因为你没有制作这个配方的素材。");
                         ImGui.EndTooltip();
                     }
                 }
 
-                ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
+                ImGuiComponents.HelpMarker("为了开始耐力模式制作，你应该先在制作菜单中选择一个配方。\n耐力模式将自动地重复制作选择的配方，并且会考虑维持指定的食物/药物buff。");
 
-                ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.RowId + 8].Abbreviation})" : "")}");
+                ImGuiEx.Text($"配方：{RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.RowId + 8].Abbreviation})" : "")}");
             }
 
             bool repairs = P.Config.Repair;
-            if (ImGui.Checkbox("Automatic Repairs", ref repairs))
+            if (ImGui.Checkbox("自动修理", ref repairs))
             {
                 P.Config.Repair = repairs;
                 P.Config.Save();
             }
-            ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}% and cost to repair at a vendor is {RepairManager.GetNPCRepairPrice()} gil.\n\nIf unable to repair with Dark Matter, will try for a nearby repair NPC.");
+            ImGuiComponents.HelpMarker($"如果启用，当任何部位的装备达到设置的修复阈值时，Artisan将自动修复你的装备。\n\n当前装备的最小耐久度为 {RepairManager.GetMinEquippedPercent()}% ，在修理工处修理的价格为 {RepairManager.GetNPCRepairPrice()} 金币。\n\n如果无法用暗物质修理，将尝试使用附近的修理NPC。");
             if (P.Config.Repair)
             {
                 //ImGui.SameLine();
@@ -161,7 +161,7 @@ namespace Artisan.Autocraft
                 ImGui.BeginDisabled();
 
             bool materia = P.Config.Materia;
-            if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
+            if (ImGui.Checkbox("自动精制魔晶石", ref materia))
             {
                 P.Config.Materia = materia;
                 P.Config.Save();
@@ -171,15 +171,15 @@ namespace Artisan.Autocraft
             {
                 ImGui.EndDisabled();
 
-                ImGuiComponents.HelpMarker("This character has not unlocked materia extraction. This setting will be ignored.");
+                ImGuiComponents.HelpMarker("此角色尚未解锁精制魔晶石。此设置将被忽略。");
             }
             else
-                ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
+                ImGuiComponents.HelpMarker("一旦装备的精炼度达到100%，就会自动从装备中精致魔晶石。");
 
-            ImGui.Checkbox("Craft only X times", ref P.Config.CraftingX);
+            ImGui.Checkbox("指定制作次数", ref P.Config.CraftingX);
             if (P.Config.CraftingX)
             {
-                ImGui.Text("Number of Times:");
+                ImGui.Text("次数：");
                 ImGui.SameLine();
                 ImGui.PushItemWidth(200);
                 if (ImGui.InputInt("###TimesRepeat", ref P.Config.CraftX))
@@ -189,31 +189,31 @@ namespace Artisan.Autocraft
                 }
             }
 
-            if (ImGui.Checkbox("Use Quick Synthesis where possible", ref P.Config.QuickSynthMode))
+            if (ImGui.Checkbox("尽可能使用简易制作", ref P.Config.QuickSynthMode))
             {
                 P.Config.Save();
             }
 
             bool stopIfFail = P.Config.EnduranceStopFail;
-            if (ImGui.Checkbox("Disable Endurance Mode Upon Failed Craft", ref stopIfFail))
+            if (ImGui.Checkbox("制作失败时自动停止耐力模式。", ref stopIfFail))
             {
                 P.Config.EnduranceStopFail = stopIfFail;
                 P.Config.Save();
             }
 
             bool stopIfNQ = P.Config.EnduranceStopNQ;
-            if (ImGui.Checkbox("Disable Endurance Mode Upon Crafting an NQ item", ref stopIfNQ))
+            if (ImGui.Checkbox("制作出NQ装备时自动停止耐力模式。", ref stopIfNQ))
             {
                 P.Config.EnduranceStopNQ = stopIfNQ;
                 P.Config.Save();
             }
 
-            if (ImGui.Checkbox("Max Quantity Mode", ref P.Config.MaxQuantityMode))
+            if (ImGui.Checkbox("最大数量模式", ref P.Config.MaxQuantityMode))
             {
                 P.Config.Save();
             }
 
-            ImGuiComponents.HelpMarker("Will set ingredients for you, to maximise the amount of crafts possible.");
+            ImGuiComponents.HelpMarker("将为你设置素材，以最大限度地增加制品数量。");
         }
 
         internal static void DrawRecipeData()

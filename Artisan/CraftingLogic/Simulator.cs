@@ -17,23 +17,23 @@ public static class Simulator
 {
     public enum CraftStatus
     {
-        [Description("Craft in progress")]
+        [Description("制作进行中")]
         InProgress,
-        [Description("Craft failed due to durability")]
+        [Description("因耐久不足导致制作失败")]
         FailedDurability,
-        [Description("Craft failed due to minimum quality not being met")]
+        [Description("因未达到最低品质导致制作失败")]
         FailedMinQuality,
-        [Description($"Craft has completed 1st quality breakpoint")]
+        [Description("已完成第一个品质突破点")]
         SucceededQ1,
-        [Description($"Craft has completed 2nd quality breakpoint")]
+        [Description("已完成第二个品质突破点")]
         SucceededQ2,
-        [Description($"Craft has completed 3rd quality breakpoint")]
+        [Description("已完成第三个品质突破点")]
         SucceededQ3,
-        [Description($"Craft has completed with max quality")]
+        [Description("已完成最高品质")]
         SucceededMaxQuality,
-        [Description($"Craft has completed without max quality")]
+        [Description("已完成，但未达到最高品质")]
         SucceededSomeQuality,
-        [Description($"Craft has completed, no quality required")]
+        [Description("已完成，不需要品质")]
         SucceededNoQualityReq,
 
         Count
@@ -110,7 +110,7 @@ public static class Simulator
     {
         hintColor = ImGuiColors.DalamudWhite;
         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
-        if (solver == null) return "No valid solver found.";
+        if (solver == null) return "没有找到有效的解算器";
         var startingQuality = GetStartingQuality(recipe, assumeMaxStartingQuality, craft.StatLevel);
         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
         var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
@@ -119,17 +119,17 @@ public static class Simulator
 
         string solverHint = status switch
         {
-            CraftStatus.InProgress => "Craft did not finish (solver failed to return any more steps before finishing).",
-            CraftStatus.FailedDurability => $"Craft failed due to durability shortage. (P: {(float)result.Progress / craft.CraftProgress * 100:f0}%, Q: {(float)result.Quality / craft.CraftQualityMax * 100:f0}%)",
-            CraftStatus.FailedMinQuality => $"Craft completed but didn't meet minimum quality(P: {(float)result.Progress / craft.CraftProgress * 100:f0}%, Q: {(float)result.Quality / craft.CraftQualityMax * 100:f0}%).",
-            CraftStatus.SucceededQ1 => $"Craft completed and managed to hit 1st quality threshold in {time.TotalSeconds:f0}s.",
-            CraftStatus.SucceededQ2 => $"Craft completed and managed to hit 2nd quality threshold in {time.TotalSeconds:f0}s.",
-            CraftStatus.SucceededQ3 => $"Craft completed and managed to hit 3rd quality threshold in {time.TotalSeconds:f0}s!",
-            CraftStatus.SucceededMaxQuality => $"Craft completed with full quality in {time.TotalSeconds:f0}s!",
-            CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in {time.TotalSeconds:f0}s",
-            CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in {time.TotalSeconds:f0}s!",
-            CraftStatus.Count => "You shouldn't be able to see this. Report it please.",
-            _ => "You shouldn't be able to see this. Report it please.",
+            CraftStatus.InProgress => "制作未完成（解算器在完成之前未返回任何步骤）。",
+            CraftStatus.FailedDurability => $"因耐久度不足导致制作失败。(进展：{(float)result.Progress / craft.CraftProgress * 100:f0}%，品质：{(float)result.Quality / craft.CraftQualityMax * 100:f0}%）",
+            CraftStatus.FailedMinQuality => $"制作完成并达到满品质，耗时（进展：{(float)result.Progress / craft.CraftProgress * 100:f0}%，品质：{(float)result.Quality / craft.CraftQualityMax * 100:f0}%）",
+            CraftStatus.SucceededQ1 => $"制作完成并达到第一个品质门槛，耗时 {time.TotalSeconds:f0} 秒。",
+            CraftStatus.SucceededQ2 => $"制作完成并达到第二个品质门槛，耗时 {time.TotalSeconds:f0} 秒。",
+            CraftStatus.SucceededQ3 => $"制作完成并达到第三个品质门槛，耗时 {time.TotalSeconds:f0} 秒！",
+            CraftStatus.SucceededMaxQuality => $"制作完成并达到满品质，耗时 {time.TotalSeconds:f0} 秒！",
+            CraftStatus.SucceededSomeQuality => $"制作完成但未达到最大品质（{hq}%），耗时 {time.TotalSeconds:f0} 秒。",
+            CraftStatus.SucceededNoQualityReq => $"制作完成，无需品质，耗时 {time.TotalSeconds:f0} 秒！",
+            CraftStatus.Count => "你不应该看到这个，请报告问题。",
+            _ => "你不应该看到这个，请报告问题。",
         };
 
 

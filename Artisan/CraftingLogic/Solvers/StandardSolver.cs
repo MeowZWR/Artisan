@@ -8,12 +8,12 @@ namespace Artisan.CraftingLogic.Solvers
 {
     public class StandardSolverDefinition : ISolverDefinition
     {
-        public string MouseoverDescription { get; set; } = "This is the normal recipe solver.";
+        public string MouseoverDescription { get; set; } = "这是标准配方解算器。";
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             if (!craft.CraftExpert && craft.CraftHQ)
-                yield return new(this, 0, 2, "Standard Recipe Solver");
+                yield return new(this, 0, 2, "标准配方解算器");
         }
 
         public Solver Create(CraftState craft, int flavour) => new StandardSolver(flavour != 0);

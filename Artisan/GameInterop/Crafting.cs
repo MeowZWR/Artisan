@@ -355,7 +355,8 @@ public static unsafe class Crafting
 
         var canHQ = CurRecipe.Value.CanHq;
         CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe!.Value);
-        CurCraft?.InitialQuality = InitialQuality;
+        if (CurCraft != null)
+            CurCraft.InitialQuality = InitialQuality;
         CurStep = BuildStepState(synthWindow, null, CurCraft);
         if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
             Svc.Log.Error($"Unexpected initial state: {CurStep}");

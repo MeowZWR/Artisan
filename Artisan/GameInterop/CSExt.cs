@@ -50,7 +50,7 @@ public unsafe struct RecipeNoteIngredientEntry
     {
         if (NumAvailableNQ + NumAvailableHQ < NumTotal)
         {
-            DuoLog.Error("Unable to set specified ingredients properly due to insufficient materials.");
+            DuoLog.Error("由于材料不足，无法正确设置指定的材料。");
             return;
         }
 
