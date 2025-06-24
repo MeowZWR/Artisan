@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLists;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
@@ -13,7 +14,6 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using System;
@@ -39,7 +39,19 @@ namespace Artisan.Autocraft
 
         internal static List<int>? HQData = null;
 
-        internal static ushort RecipeID = 0;
+        internal static ushort RecipeID
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    P.Config.CraftingX = false;
+                    P.Config.CraftX = 0;
+                }
+                field = value;
+            }
+        }
 
         internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
 
@@ -73,6 +85,7 @@ namespace Artisan.Autocraft
                 Svc.Log.Debug("Endurance toggled off");
                 Enable = false;
                 IPCOverride = false;
+                PreCrafting.Tasks.Clear();
             }
         }
 
@@ -205,83 +218,37 @@ namespace Artisan.Autocraft
 
         internal static void DrawRecipeData()
         {
-            var addonPtr = Svc.GameGui.GetAddonByName("RecipeNote", 1);
-            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+            var curRec = Operations.GetSelectedRecipeEntry();
+            if (curRec is null || curRec->RecipeId == 0)
+                return;
+
+            RecipeID = curRec->RecipeId;
+            try
             {
-                if (addonPtr == IntPtr.Zero)
+                for (int i = 0; i < curRec->IngredientsSpan.Length; i++)
                 {
-                    return;
-                }
+                    var ing = curRec->IngredientsSpan[i];
+                    if (ing.ItemId == 0)
+                        break;
+                    var nq = ing.NumAssignedNQ;
+                    var hq = ing.NumAssignedHQ;
 
-                if (addon->AtkUnitBase.IsVisible && addon->AtkUnitBase.UldManager.NodeListCount >= 49)
-                {
-                    try
+                    SetIngredients[i] = new EnduranceIngredients()
                     {
-                        if (addon->AtkUnitBase.UldManager.NodeList[88]->IsVisible())
-                        {
-                            RecipeID = 0;
-                            return;
-                        }
+                        NQSet = nq,
+                        HQSet = hq,
+                    };
 
-                        if (addon->SelectedRecipeName is null)
-                            return;
-
-                        var selectedRecipe = Operations.GetSelectedRecipeEntry();
-                        if (selectedRecipe == null)
-                        {
-                            RecipeID = 0;
-                            return;
-                        }
-
-                        if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible())
-                        {
-                            RecipeID = selectedRecipe->RecipeId;
-                        }
-                        Array.Clear(SetIngredients);
-
-                        for (int i = 0; i <= 5; i++)
-                        {
-                            try
-                            {
-                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                                if (node->Component->UldManager.NodeListCount < 16)
-                                    return;
-
-                                if (node is null || !node->AtkResNode.IsVisible())
-                                {
-                                    break;
-                                }
-
-                                var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
-                                var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
-
-                                var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-                                var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-
-                                int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
-                                int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
-
-                                EnduranceIngredients ingredients = new EnduranceIngredients()
-                                {
-                                    IngredientSlot = i,
-                                    HQSet = hqSet,
-                                    NQSet = nqSet,
-                                };
-
-                                SetIngredients[i] = ingredients;
-                            }
-                            catch (Exception)
-                            {
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Svc.Log.Error(ex, "Setting Recipe ID");
-                        RecipeID = 0;
-                    }
+                    //Svc.Log.Debug($"Assigned {nq}NQ, {hq}HQ {ing.ItemId.NameOfItem()}");
                 }
             }
+            catch (Exception ex)
+            {
+                Svc.Log.Error(ex, "Setting Recipe ID");
+                RecipeID = 0;
+            }
+
+
         }
 
         internal static void Init()
@@ -405,9 +372,9 @@ namespace Artisan.Autocraft
                 {
                     if (!P.TM.IsBusy)
                     {
-                        PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200)));
+                        PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500)));
 
-                        if (!CraftingListFunctions.RecipeWindowOpen()) return;
+                        if (!CraftingListFunctions.RecipeWindowOpen() && !CraftingListFunctions.CosmicLogOpen()) return;
 
                         if (type == PreCrafting.CraftType.Quick)
                         {
@@ -417,6 +384,7 @@ namespace Artisan.Autocraft
                         else if (type == PreCrafting.CraftType.Normal)
                         {
                             P.TM.DelayNext(200);
+
                             if (P.Config.MaxQuantityMode)
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredientsNonLayout");
                             else
@@ -426,27 +394,31 @@ namespace Artisan.Autocraft
                             P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 500, "EnduranceNormalWaitStart");
                             P.TM.Enqueue(() =>
                             {
-                                if (FailedStarts.Count() >= 5 && FailedStarts.All(x => x > Environment.TickCount64 - (10 * 1000)))
+                                if (!RaphaelCache.InProgressAny())
                                 {
-                                    FailedStarts.Clear();
-                                    if (Crafting.CurState is not Crafting.State.QuickCraft and not Crafting.State.InProgress and not Crafting.State.WaitStart)
+                                    if (FailedStarts.Count() >= 5 && FailedStarts.All(x => x > Environment.TickCount64 - (10 * 1000)))
                                     {
-                                        if (!IPCOverride)
+                                        FailedStarts.Clear();
+                                        if (Crafting.CurState is not Crafting.State.QuickCraft and not Crafting.State.InProgress and not Crafting.State.WaitStart)
                                         {
-                                            DuoLog.Error($"Unable to start crafting. Disabling Endurance. {(!P.Config.MaxQuantityMode ? "Please enable Max Quantity mode or set your ingredients before starting." : "")}");
+                                            if (!IPCOverride)
+                                            {
+                                                DuoLog.Error($"Unable to start crafting. Disabling Endurance. {(!P.Config.MaxQuantityMode ? "Please enable Max Quantity mode or set your ingredients before starting." : "")}");
+                                            }
+                                            else
+                                            {
+                                                DuoLog.Error($"Something has gone wrong whilst another plugin tried to control Artisan. Disabling Endurance.");
+                                            }
+                                            ToggleEndurance(false);
                                         }
-                                        else
-                                        {
-                                            DuoLog.Error($"Something has gone wrong whilst another plugin tried to control Artisan. Disabling Endurance.");
-                                        }
-                                        ToggleEndurance(false);
+                                    }
+                                    else
+                                    {
+                                        FailedStarts.PushBack(Environment.TickCount64);
                                     }
                                 }
-                                else
-                                {
-                                    FailedStarts.PushBack(Environment.TickCount64);
-                                }
                             });
+
                         }
                     }
 
@@ -458,22 +430,22 @@ namespace Artisan.Autocraft
         {
             if (Enable || (CraftingListUI.Processing && !CraftingListFunctions.Paused))
             {
-                foreach (uint errorId in UnableToCraftErrors)
-                {
-                    if (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.ExtractText())
-                    {
-                        Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
-                        DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
-                        if (enable)
-                            ToggleEndurance(false);
-                        if (CraftingListUI.Processing)
-                            CraftingListFunctions.Paused = true;
-                        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                //foreach (uint errorId in UnableToCraftErrors)
+                //{
+                //    if (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.ExtractText())
+                //    {
+                //        Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
+                //        DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
+                //        if (enable)
+                //            ToggleEndurance(false);
+                //        if (CraftingListUI.Processing)
+                //            CraftingListFunctions.Paused = true;
+                //        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
-                        P.TM.Abort();
-                        CraftingListFunctions.CLTM.Abort();
-                    }
-                }
+                //        P.TM.Abort();
+                //        CraftingListFunctions.CLTM.Abort();
+                //    }
+                //}
 
                 Errors.PushBack(Environment.TickCount64);
                 Svc.Log.Warning($"Error Warnings [{Errors.Count(x => x > Environment.TickCount64 - 10 * 1000)}]: {message}");

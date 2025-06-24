@@ -13,7 +13,9 @@ using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using global::Artisan.CraftingLogic;
+using global::Artisan.CraftingLogic.Solvers;
 using global::Artisan.GameInterop;
+using global::Artisan.RawInformation.Character;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
@@ -28,8 +30,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -89,6 +91,8 @@ internal class ListEditor : Window, IDisposable
 
     IngredientHelpers IngredientHelper = new();
 
+    private bool hqSim = false;
+
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
@@ -126,6 +130,7 @@ internal class ListEditor : Window, IDisposable
     {
         token = source.Token;
         Table = null;
+        P.UniversalsisClient.PlayerWorld = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
         if (RegenerateTask == null || RegenerateTask.IsCompleted)
         {
             Svc.Log.Debug($"Starting regeneration");
@@ -234,6 +239,9 @@ internal class ListEditor : Window, IDisposable
 
             if (RetainerInfo.AToolsInstalled && !RetainerInfo.AToolsEnabled)
                 ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please enable Allagan Tools for retainer features.");
+
+            if (RetainerInfo.AToolsEnabled)
+                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"You have turned off Allagan Tools integration.");
         }
 
         if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
@@ -625,6 +633,8 @@ internal class ListEditor : Window, IDisposable
             }
         }
     }
+
+    private Dictionary<uint, string> RecipeLabels = new Dictionary<uint, string>();
     private void DrawRecipeList()
     {
         if (P.Config.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
@@ -637,7 +647,7 @@ internal class ListEditor : Window, IDisposable
 
         ImGui.Text("Search");
         ImGui.SameLine();
-        ImGui.InputText("###RecipeSearch", ref Search, 100);
+        ImGui.InputText("###RecipeSearch", ref Search, 150);
         if (ImGui.Selectable(string.Empty, SelectedRecipe == null))
         {
             SelectedRecipe = null;
@@ -645,10 +655,15 @@ internal class ListEditor : Window, IDisposable
 
         if (P.Config.ShowOnlyCraftable && RetainerInfo.CacheBuilt)
         {
-            foreach (var recipe in CraftingListUI.CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
+            foreach (var recipe in CraftingListUI.CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => Regex.Match(x.ItemResult.Value.Name.GetText(true), Search, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Success))
             {
+                if (recipe.Number == 0) continue;
                 ImGui.PushID((int)recipe.RowId);
-                var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                if (!RecipeLabels.ContainsKey(recipe.RowId))
+                {
+                    RecipeLabels[recipe.RowId] = $"{recipe.ItemResult.Value.Name.ToDalamudString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation} {recipe.RecipeLevelTable.Value.ClassJobLevel})";
+                }
+                var selected = ImGui.Selectable(RecipeLabels[recipe.RowId], recipe.RowId == SelectedRecipe?.RowId);
 
                 if (selected)
                 {
@@ -662,14 +677,18 @@ internal class ListEditor : Window, IDisposable
         }
         else if (!P.Config.ShowOnlyCraftable)
         {
-            foreach (var recipe in CollectionsMarshal.AsSpan(LuminaSheets.RecipeSheet.Values.ToList()))
+            foreach (var recipe in LuminaSheets.RecipeSheet.Values)
             {
                 try
                 {
-                    if (string.IsNullOrEmpty(recipe.ItemResult.Value.Name.ToDalamudString().ToString())) continue;
-                    if (!recipe.ItemResult.Value.Name.ToDalamudString().ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)) continue;
-                    rawIngredientsList.Clear();
-                    var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                    if (recipe.ItemResult.RowId == 0) continue;
+                    if (recipe.Number == 0) continue;
+                    if (!string.IsNullOrEmpty(Search) && !Regex.Match(recipe.ItemResult.Value.Name.GetText(true), Search, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Success) continue;
+                    if (!RecipeLabels.ContainsKey(recipe.RowId))
+                    {
+                        RecipeLabels[recipe.RowId] = $"{recipe.ItemResult.Value.Name.ToDalamudString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation} {recipe.RecipeLevelTable.Value.ClassJobLevel})";
+                    }
+                    var selected = ImGui.Selectable(RecipeLabels[recipe.RowId], recipe.RowId == SelectedRecipe?.RowId);
 
                     if (selected)
                     {
@@ -1111,7 +1130,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Apply To all###QuickSynthAll"))
             {
-                foreach (var r in SelectedList.Recipes)
+                foreach (var r in SelectedList.Recipes.Where(n => LuminaSheets.RecipeSheet[n.ID].CanQuickSynth))
                 {
                     if (r.ListItemOptions == null)
                     { r.ListItemOptions = new(); }
@@ -1132,16 +1151,17 @@ internal class ListEditor : Window, IDisposable
             ImGui.TextWrapped("This item cannot be quick synthed.");
         }
 
-        if (LuminaSheets.RecipeSheet.Values
-                .Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString() == selectedListItem.NameOfRecipe()).Count() > 1)
+        // Retrieve the list of recipes matching the selected recipe name from the preprocessed lookup table.
+        var matchingRecipes = LuminaSheets.recipeLookup[selectedListItem.NameOfRecipe()].ToList();
+
+        if (matchingRecipes.Count > 1)
         {
             var pre = $"{LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()}";
             ImGui.TextWrapped("Switch crafted job");
             ImGuiEx.SetNextItemFullWidth(-30);
             if (ImGui.BeginCombo("###SwitchJobCombo", pre))
             {
-                foreach (var altJob in LuminaSheets.RecipeSheet.Values.Where(
-                             x => x.ItemResult.Value.Name.ToDalamudString().ToString() == selectedListItem.NameOfRecipe()))
+                foreach (var altJob in matchingRecipes)
                 {
                     var altJ = $"{LuminaSheets.ClassJobSheet[altJob.CraftType.RowId + 8].Abbreviation.ToString()}";
                     if (ImGui.Selectable($"{altJ}"))
@@ -1192,8 +1212,8 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredFood = config.RequiredFood;
-                    o.RequiredFoodHQ = config.RequiredFoodHQ;
+                    o.requiredFood = config.requiredFood;
+                    o.requiredFoodHQ = config.requiredFoodHQ;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1213,8 +1233,8 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredPotion = config.RequiredPotion;
-                    o.RequiredPotionHQ = config.RequiredPotionHQ;
+                    o.requiredPotion = config.requiredPotion;
+                    o.requiredPotionHQ = config.requiredPotionHQ;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1235,7 +1255,7 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredManual = config.RequiredManual;
+                    o.requiredManual = config.requiredManual;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1256,7 +1276,7 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredSquadronManual = config.RequiredSquadronManual;
+                    o.requiredSquadronManual = config.requiredSquadronManual;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1264,15 +1284,24 @@ internal class ListEditor : Window, IDisposable
         }
 
         var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
-        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
         var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
         if (config.DrawSolver(craft))
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();
         }
+        
+        ImGuiEx.TextV("Requirements:");
+        ImGui.SameLine();
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0, ImGui.GetStyle().ItemSpacing.Y));
+        ImGui.SameLine(137.6f.Scale());
+        ImGui.TextWrapped($"Difficulty: {craft.CraftProgress} | Durability: {craft.CraftDurability} | Quality: {(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)}");
+        ImGuiComponents.HelpMarker($"Shows the crafting requirements: Progress needed to complete the craft, how much Durability the recipe has, and Quality target required to reach the highest Quality level (In case of a Collectible). Use this information to select an appropriate macro, if desired.");
 
-        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+        ImGui.Checkbox($"Assume Max Starting Quality (for simulator)", ref hqSim);
+
+        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor, hqSim);
         if (!recipe.IsExpert)
             ImGuiEx.TextWrapped(hintColor, solverHint);
         else
@@ -1339,6 +1368,7 @@ internal class RecipeSelector : ItemSelector<ListItem>
             if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == id))
             {
                 var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == id);
+                if (recipe.Number == 0) return false;
                 if (List.Recipes.Any(x => x.ID == recipe.RowId))
                 {
                     List.Recipes.First(x => x.ID == recipe.RowId).Quantity += 1;
@@ -1357,6 +1387,7 @@ internal class RecipeSelector : ItemSelector<ListItem>
                     x => x.ItemResult.Value.Name.ToDalamudString().ToString().Equals(name, StringComparison.CurrentCultureIgnoreCase),
                     out var recipe))
             {
+                if (recipe.Number == 0) return false;
                 if (List.Recipes.Any(x => x.ID == recipe.RowId))
                 {
                     List.Recipes.First(x => x.ID == recipe.RowId).Quantity += 1;

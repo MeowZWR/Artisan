@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using ECommons.DalamudServices;
+using System;
+using System.Collections.Generic;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
 
@@ -27,10 +29,14 @@ namespace Artisan.CraftingLogic.Solvers
         private bool _qualityStarted;
         private bool _venereationUsed;
         private bool _trainedEyeUsed;
+        private bool _materialMiracleUsed;
+
+        private Solver? _fallback; //For Material Miracle
 
         public StandardSolver(bool expert)
         {
             _expert = expert;
+            _fallback = new ExpertSolver();
         }
 
         public override Recommendation Solve(CraftState craft, StepState step)
@@ -39,13 +45,18 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (Simulator.GetDurabilityCost(step, rec.Action) == 0)
             {
-                if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
-                if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                if (rec.Action != Skills.MaterialMiracle)
+                {
+                    if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
+                    if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                }
             }
             else
             {
-                if (WillActFail(craft, step, rec.Action) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
-                if (WillActFail(craft, step, rec.Action) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                var stepClone = rec.Action;
+                if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
+                if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+
             }
 
             if ((rec.Action is not Skills.MastersMend or Skills.ImmaculateMend) &&
@@ -90,21 +101,20 @@ namespace Artisan.CraftingLogic.Solvers
                 return Skills.IntensiveSynthesis;
             }
 
-            if (Simulator.CanUseAction(craft, step, Skills.PrudentSynthesis) && step.RemainingCP < 88) // TODO: what's up with this cp condition?
-            {
-                return Skills.PrudentSynthesis;
-            }
-
-            bool carefulCanFinish = Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis) && CanFinishCraft(craft, step, Skills.CarefulSynthesis) && step.FinalAppraisalLeft > 0;
-
             if (!_qualityStarted && !progOnly)
             {
                 if (CalculateNewProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress - Simulator.BaseProgress(craft))
                     return Skills.BasicSynthesis;
             }
-            if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability >= Simulator.GetDurabilityCost(step, Skills.Groundwork) && !carefulCanFinish)
+
+            if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability > Simulator.GetDurabilityCost(step, Skills.Groundwork))
             {
                 return Skills.Groundwork;
+            }
+
+            if (Simulator.CanUseAction(craft, step, Skills.PrudentSynthesis))
+            {
+                return Skills.PrudentSynthesis;
             }
 
             if (Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis))
@@ -133,12 +143,21 @@ namespace Artisan.CraftingLogic.Solvers
 
         public Recommendation GetRecommendation(CraftState craft, StepState step)
         {
+            var fallbackRec = _fallback.Solve(craft, step);
+
             _manipulationUsed |= step.PrevComboAction == Skills.Manipulation;
             _trainedEyeUsed |= step.PrevComboAction == Skills.TrainedEye;
             _wasteNotUsed |= step.PrevComboAction is Skills.WasteNot or Skills.WasteNot2;
             _qualityStarted |= step.PrevComboAction is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.ByregotsBlessing or Skills.PrudentTouch
                 or Skills.PreciseTouch or Skills.TrainedEye or Skills.PreparatoryTouch or Skills.TrainedFinesse or Skills.Innovation;
             _venereationUsed |= step.PrevComboAction == Skills.Veneration;
+            _materialMiracleUsed |= step.PrevComboAction == Skills.MaterialMiracle && !P.Config.MaterialMiracleMulti;
+
+            if (step.MaterialMiracleActive)
+                return fallbackRec;
+
+            if (P.Config.UseMaterialMiracle && !_materialMiracleUsed && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+                return new(Skills.MaterialMiracle);
 
             bool inCombo = (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch)) || (step.PrevComboAction == Skills.StandardTouch && Simulator.CanUseAction(craft, step, Skills.AdvancedTouch));
             var act = BestSynthesis(craft, step);
@@ -276,7 +295,8 @@ namespace Artisan.CraftingLogic.Solvers
 
         private static bool WillActFail(CraftState craft, StepState step, Skills act)
         {
-            return step.Durability - Simulator.GetDurabilityCost(step, act) <= 0 && CalculateNewProgress(craft, step, act) < craft.CraftProgress;
+            bool result = step.Durability - Simulator.GetDurabilityCost(step, act) <= 0 && CalculateNewProgress(craft, step, act) < craft.CraftProgress;
+            return result;
         }
 
         private static bool GoingForQuality(CraftState craft, StepState step, out int maxQuality)
@@ -372,9 +392,9 @@ namespace Artisan.CraftingLogic.Solvers
             }
         }
 
-        public static int CalculateNewProgress(CraftState craft, StepState step, Skills action) => step.Progress + Simulator.CalculateProgress(craft, step, action);
+        public static int CalculateNewProgress(CraftState craft, StepState step, Skills action) => step.FinalAppraisalLeft > 0 ? Math.Min(step.Progress + Simulator.CalculateProgress(craft, step, action), craft.CraftProgress -1) : step.Progress + Simulator.CalculateProgress(craft, step, action);
         public static int CalculateNewQuality(CraftState craft, StepState step, Skills action) => step.Quality + Simulator.CalculateQuality(craft, step, action);
-        public static bool CanFinishCraft(CraftState craft, StepState step, Skills act) => CalculateNewProgress(craft, step, act) >= craft.CraftProgress && step.FinalAppraisalLeft == 0;
+        public static bool CanFinishCraft(CraftState craft, StepState step, Skills act) => CalculateNewProgress(craft, step, act) >= craft.CraftProgress;
 
         public static int GreatStridesByregotCombo(CraftState craft, StepState step)
         {

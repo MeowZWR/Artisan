@@ -7,18 +7,20 @@ using Dalamud.Configuration;
 using ECommons.DalamudServices;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Artisan
 {
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 2;
         public bool AutoMode
         {
-            get => autoMode; 
+            get => autoMode;
             set
             {
                 if (value)
@@ -32,6 +34,8 @@ namespace Artisan
         public int MaxPercentage = 100;
         public bool UseTricksGood = false;
         public int MaxIQPrepTouch = 10;
+        public bool UseMaterialMiracle = false;
+        public bool MaterialMiracleMulti;
         public bool LowStatsMode = false;
         public bool UseTricksExcellent = false;
         public bool UseSpecialist = false;
@@ -49,6 +53,7 @@ namespace Artisan
         public List<CraftingList> CraftingLists { get; set; } = new();
         public List<NewCraftingList> NewCraftingLists { get; set; } = new();
 
+        public bool ReplicateMacroDelay = false;
         public int AutoDelay = 0;
         public bool DelayRecommendation = false;
         public int RecommendationDelay = 0;
@@ -84,13 +89,22 @@ namespace Artisan
 
         public bool UseConsumablesTrial = false;
         public bool UseConsumablesQuickSynth = false;
+        public RecipeConfig DefaultConsumables = new(){
+            requiredFood = RecipeConfig.Disabled,
+            requiredPotion = RecipeConfig.Disabled,
+            requiredManual = RecipeConfig.Disabled,
+            requiredSquadronManual = RecipeConfig.Disabled,
+            requiredFoodHQ = false,
+            requiredPotionHQ = false
+        };
+
 
         public bool PlaySoundFinishEndurance = false;
         public bool PlaySoundFinishList = false;
 
         public float SoundVolume = 0.25f;
 
-        public bool DefaultListMateria = false;   
+        public bool DefaultListMateria = false;
         public bool DefaultListSkip = false;
         public bool DefaultListSkipLiteral = false;
         public bool DefaultListRepair = false;
@@ -148,6 +162,9 @@ namespace Artisan
         public bool ReplaceSearch = true;
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
+        public RaphaelSolverSettings RaphaelSolverConfig = new();
+        public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV2 = [];
+        public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV3 = [];
 
         public void Save()
         {
@@ -156,6 +173,7 @@ namespace Artisan
 
         public static Configuration Load()
         {
+            var fallback = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new();
             try
             {
                 var contents = File.ReadAllText(Svc.PluginInterface.ConfigFile.FullName);
@@ -167,7 +185,7 @@ namespace Artisan
             catch (Exception e)
             {
                 Svc.Log.Error($"Failed to load config from {Svc.PluginInterface.ConfigFile.FullName}: {e}");
-                return new();
+                return fallback;
             }
         }
 

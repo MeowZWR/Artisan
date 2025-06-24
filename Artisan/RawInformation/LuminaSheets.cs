@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation.Character;
+using ECommons;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
@@ -13,6 +14,8 @@ namespace Artisan.RawInformation
     {
 
         public static Dictionary<uint, Recipe>? RecipeSheet;
+
+        public static ILookup<string, Recipe>? recipeLookup;
 
         public static Dictionary<uint, GatheringItem>? GatheringItemSheet;
 
@@ -31,8 +34,6 @@ namespace Artisan.RawInformation
         public static Dictionary<uint, Status>? StatusSheet;
 
         public static Dictionary<uint, CraftAction>? CraftActions;
-
-        public static Dictionary<uint, CraftLevelDifference>? CraftLevelDifference;
 
         public static Dictionary<uint, RecipeLevelTable>? RecipeLevelTableSheet;
 
@@ -65,6 +66,10 @@ namespace Artisan.RawInformation
                 .ThenBy(x => x.ItemResult.Value.Name.ToDalamudString().ToString())
                 .ToDictionary(x => x.RowId, x => x);
 
+            // Preprocess the recipe data into a lookup table (ILookup) for faster access.
+            recipeLookup = LuminaSheets.RecipeSheet.Values
+                .ToLookup(x => x.ItemResult.Value.Name.ToDalamudString().ToString());
+
             GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?
                 .Where(x => x.GatheringItemLevel.Value.GatheringItemLevel > 0)
                 .ToDictionary(i => i.RowId, i => i);
@@ -94,9 +99,6 @@ namespace Artisan.RawInformation
                        .ToDictionary(i => i.RowId, i => i);
 
             CraftActions = Svc.Data?.GetExcelSheet<CraftAction>()?
-                       .ToDictionary(i => i.RowId, i => i);
-
-            CraftLevelDifference = Svc.Data?.GetExcelSheet<CraftLevelDifference>()?
                        .ToDictionary(i => i.RowId, i => i);
 
             RecipeLevelTableSheet = Svc.Data?.GetExcelSheet<RecipeLevelTable>()?
@@ -149,11 +151,12 @@ namespace Artisan.RawInformation
 
     public static class SheetExtensions
     {
-        public static string NameOfAction(this Skills skill)
+        public static string NameOfAction(this Skills skill, bool raphParseEn = false)
         {
             if (skill == Skills.TouchCombo) return "Touch Combo";
+            if (skill == Skills.TouchComboRefined) return "Touch Combo (Refined Touch Route)";
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
-            return id == 0 ? "Artisan Recommendation" : id < 100000 ? LuminaSheets.ActionSheet[id].Name.ToString() : LuminaSheets.CraftActions[id].Name.ToString();
+            return id == 0 ? "Artisan Recommendation" : id < 100000 ? Svc.Data.GetExcelSheet<Action>(raphParseEn ? Dalamud.Game.ClientLanguage.English : Svc.ClientState.ClientLanguage)[id].Name.ToString() : Svc.Data.GetExcelSheet<CraftAction>(raphParseEn ? Dalamud.Game.ClientLanguage.English : Svc.ClientState.ClientLanguage)[id].Name.ToString();
         }
 
         public static ushort IconOfAction(this Skills skill, ECommons.ExcelServices.Job job)
@@ -171,7 +174,7 @@ namespace Artisan.RawInformation
         public static string GetSkillDescription(this Skills skill)
         {
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
-            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description.ToString() : LuminaSheets.CraftActions[id].Description.ToString();
+            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description.ToDalamudString().ToString() : LuminaSheets.CraftActions[id].Description.ToDalamudString().ToString();
             description = skill switch
             {
                 Skills.BasicSynthesis => description.Replace($": %", $": 100%/120%").Replace($"効率：", $"効率：100/120").Replace($"Effizienz: ", $"Effizienz: 100/120"),
@@ -220,6 +223,35 @@ namespace Artisan.RawInformation
             }
             return "";
 
+        }
+
+        public static bool MissionHasMaterialMiracle(this Recipe recipe)
+        {
+            try
+            {
+
+                Svc.Data.GameData.Options.PanicOnSheetChecksumMismatch = false;
+                var id = recipe.RowId;
+                //First, find the MissionRecipe with our recipe
+                var missionRec = Svc.Data.GetExcelSheet<WKSMissionRecipe>().FirstOrDefault(missionRec => missionRec.Recipe.Any(recipe =>  recipe.RowId == id));
+                //Bail if there's no MissionRecipe (this isn't a Cosmic Craft)
+                if (missionRec.RowId == 0)
+                    return false;
+                
+                //Next, find the MissionUnit that has our MissionRecipe row
+                var missionUnit = Svc.Data.GetExcelSheet<WKSMissionUnit>().First(missionUnit => missionUnit.WKSMissionRecipe == (ushort)missionRec.RowId);
+
+                //Get the MissionToDo from the MissionUnit
+                var missionToDo = Svc.Data.GetExcelSheet<WKSMissionToDo>().GetRow(missionUnit.Unknown7);
+
+                //Svc.Log.Verbose($"{id} -> {missionRec.RowId} -> {missionUnit.RowId} -> {missionToDo.RowId} -> {missionToDo.Unknown0}");
+                return missionToDo.Unknown0 == (uint)Skills.MaterialMiracle;
+            }
+            catch (Exception e)
+            {
+                Svc.Log.Error($"Error in MissionHasMaterialMiracle: {e}");
+                return false;
+            }
         }
     }
 }

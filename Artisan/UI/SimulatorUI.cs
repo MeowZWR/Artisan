@@ -575,6 +575,7 @@ namespace Artisan.UI
                         if (i + 1 < _simCurSteps.Count)
                         {
                             var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
+                            var comment = _simCurSteps[i].comment;
                             ImGui.Image(P.Icons.TryLoadIconAsync(currentAction.IconOfAction(job)).Result.ImGuiHandle, new Vector2(widgetSize));
                             var step = _simCurSteps[i + 1].step;
                             if (ImGui.IsItemHovered())
@@ -586,6 +587,7 @@ namespace Artisan.UI
                                 ImGuiEx.Text($"D: {step.Durability} / {_selectedCraft.CraftDurability} ({Math.Round((float)step.Durability / _selectedCraft.CraftDurability * 100, 0)}%)");
                                 ImGuiEx.Text($"CP: {step.RemainingCP} / {_selectedCraft.StatCP} ({Math.Round((float)step.RemainingCP / _selectedCraft.StatCP * 100, 0)}%)");
                                 ImGuiEx.Text($"Condition: {_simCurSteps[i].step.Condition} -> {step.Condition}");
+                                ImGuiEx.Text($"{comment}");
                                 ImGui.EndTooltip();
                             }
 
@@ -832,7 +834,7 @@ namespace Artisan.UI
                 ImGui.NextColumn();
                 ImGui.TextWrapped($"CP: {gsStats.CP + cpBoost} ({gsStats.CP} + {cpBoost})");
                 ImGui.NextColumn();
-                ImGui.TextWrapped($"Splendorous Tool: {gsStats.Splendorous}");
+                ImGui.TextWrapped($"Splendorous/Cosmic Tool: {gsStats.SplendorCosmic}");
                 ImGui.NextColumn();
                 ImGui.TextWrapped($"Specialist: {gsStats.Specialist}");
                 ImGui.NextColumn();
@@ -845,7 +847,7 @@ namespace Artisan.UI
                     Control = gsStats.Control + controlBoost,
                     CP = gsStats.CP + cpBoost,
                     Specialist = gsStats.Specialist,
-                    Splendorous = gsStats.Splendorous,
+                    SplendorCosmic = gsStats.SplendorCosmic,
                     Manipulation = gsStats.Manipulation
                 };
 
@@ -932,7 +934,7 @@ namespace Artisan.UI
                 ImGUIMethods.InputIntBound($"CP:", ref gsCP, 1, 99999, true);
                 ImGui.NextColumn();
                 ImGui.Columns(3, null, false);
-                ImGUIMethods.FlippedCheckbox($"Splendorous:", ref gsSplend);
+                ImGUIMethods.FlippedCheckbox($"Splendorous/Cosmic:", ref gsSplend);
                 ImGui.NextColumn();
                 ImGUIMethods.FlippedCheckbox($"Specialist:", ref gsSpecialist);
                 ImGui.NextColumn();
@@ -945,7 +947,7 @@ namespace Artisan.UI
                     Control = gsControl,
                     CP = gsCP,
                     Specialist = gsSpecialist,
-                    Splendorous = gsSplend,
+                    SplendorCosmic = gsSplend,
                     Manipulation = gsManip,
                     Level = gsLevel,    
                 };

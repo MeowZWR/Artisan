@@ -10,6 +10,8 @@ using System.Runtime.CompilerServices;
 using Lumina.Excel.Sheets;
 using Artisan.RawInformation;
 using Lumina.Excel;
+using System.Linq;
+using Dalamud.Game.ClientState.Statuses;
 
 namespace Artisan.GameInterop;
 
@@ -54,13 +56,13 @@ public unsafe struct ItemStats
     public ItemStats(uint ItemId, bool hq, Span<ushort> materia, Span<byte> materiaGrades)
     {
         HQ = hq;
-        if (ItemId == 0)
+        if (ItemId == 0 || ItemId == 8575) //Eternity ring is weird?
             return;
 
         Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(ItemId);
         if (Data == null)
             return;
-
+         
         foreach (var p in Data.Value.BaseParams())
         {
             if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam.RowId) is var stat && stat >= 0)
@@ -92,6 +94,10 @@ public unsafe struct ItemStats
 
             var materiaRow = sheetMat?.GetRow(materia[i]);
             if (materiaRow == null)
+                continue;
+
+            var baseParamRow = materiaRow.Value.BaseParam.ValueNullable;
+            if (baseParamRow is null || baseParamRow.Value.RowId == 0)
                 continue;
 
             var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, materiaRow.Value.BaseParam.RowId);
@@ -157,13 +163,13 @@ public unsafe struct CharacterStats
     public int Control;
     public int CP;
     public int Level;
-    public bool Splendorous;
+    public bool SplendorCosmic;
     public bool Specialist;
     public bool Manipulation;
 
     public override string ToString()
     {
-        return $"Craft: {Craftsmanship}; Control: {Control}; CP: {CP}; Level: {Level}; Splendorous: {Splendorous}; Specialist: {Specialist}; Manipulation: {Manipulation};";
+        return $"Craft: {Craftsmanship}; Control: {Control}; CP: {CP}; Level: {Level}; Splendorous/Cosmic: {SplendorCosmic}; Specialist: {Specialist}; Manipulation: {Manipulation};";
     }
 
     // current in-game stats
@@ -175,7 +181,7 @@ public unsafe struct CharacterStats
         stats.Control = CharacterInfo.Control;
         stats.CP = (int)CharacterInfo.MaxCP;
         stats.Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemId != 0; // specialist == job crystal equipped
-        stats.Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90, Rarity: >= 4 };
+        stats.SplendorCosmic = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90 or 100, Rarity: >= 4 };
         stats.Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID);
 
         return stats;
@@ -246,13 +252,13 @@ public unsafe struct CharacterStats
         Craftsmanship += item.Stats[(int)CharacterStatsUtils.Stat.Craftsmanship].Effective;
         Control += item.Stats[(int)CharacterStatsUtils.Stat.Control].Effective;
         CP += item.Stats[(int)CharacterStatsUtils.Stat.CP].Effective;
-        Splendorous |= slot == 0 && item.Data.Value.LevelEquip == 90 && item.Data.Value.Rarity >= 4;
+        SplendorCosmic |= slot == 0 && item.Data.Value.LevelEquip is 90 or 100 && item.Data.Value.Rarity >= 4;
         Specialist |= slot == 13; // specialist == job crystal equipped
     }
 
-    public void AddConsumables(ConsumableStats food, ConsumableStats pot)
+    public void AddConsumables(ConsumableStats food, ConsumableStats pot, Dalamud.Game.ClientState.Statuses.Status fcCraftBuff)
     {
-        Craftsmanship += food.EffectiveValue(CharacterStatsUtils.Stat.Craftsmanship, Craftsmanship) + pot.EffectiveValue(CharacterStatsUtils.Stat.Craftsmanship, Craftsmanship);
+        Craftsmanship += food.EffectiveValue(CharacterStatsUtils.Stat.Craftsmanship, Craftsmanship) + pot.EffectiveValue(CharacterStatsUtils.Stat.Craftsmanship, Craftsmanship) + (fcCraftBuff != null ? fcCraftBuff.Param : 0);
         Control += food.EffectiveValue(CharacterStatsUtils.Stat.Control, Control) + pot.EffectiveValue(CharacterStatsUtils.Stat.Control, Control);
         CP += food.EffectiveValue(CharacterStatsUtils.Stat.CP, CP) + pot.EffectiveValue(CharacterStatsUtils.Stat.CP, CP);
     }

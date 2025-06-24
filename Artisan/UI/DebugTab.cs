@@ -11,13 +11,18 @@ using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
+using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Game.WKS;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina;
 using Lumina.Excel.Sheets;
 using System;
 using System.Linq;
@@ -127,6 +132,59 @@ namespace Artisan.UI
                         }
                     }
                 }
+                if (ImGui.CollapsingHeader("Recipe Configs"))
+                {
+                    if (ImGui.Button("Clear (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+                    {
+                        P.Config.RecipeConfigs.Clear();
+                        P.Config.Save();
+                    }
+                    ImGui.BeginTable("DebugeRcipeConfigs", 9);
+                    ImGui.TableHeader("DebugRecipeConfigs");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Item");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredFood");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("HQ?");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredPotion");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("HQ?");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredManual");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredSquadronManual");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("SolverType");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("SolverFlavour");
+
+                    foreach (var (k, v) in P.Config.RecipeConfigs)
+                    {
+                        ImGui.TableNextRow();
+                        var recipe = LuminaSheets.RecipeSheet[k];
+                        ImGui.TableNextColumn();
+                        ImGui.Text(recipe.ItemResult.Value.Name.ToDalamudString().ToString());
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredFood}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredFoodHQ}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredPotion}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredPotionHQ}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredManual}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredSquadronManual}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.SolverType}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.SolverFlavour}");
+                    }
+                    ImGui.EndTable();
+                }
                 if (ImGui.CollapsingHeader("Base Stats"))
                 {
                     ImGui.Text($"{CharacterStats.GetCurrentStats()}");
@@ -160,6 +218,8 @@ namespace Artisan.UI
                     ImGui.Text($"Current Rec: {CraftingProcessor.NextRec.Action.NameOfAction()}");
                     ImGui.Text($"Previous Action: {Crafting.CurStep.PrevComboAction.NameOfAction()}");
                     ImGui.Text($"Can insta delicate: {Crafting.CurStep.Index == 1 && StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) && StandardSolver.CalculateNewQuality(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) >= Crafting.CurCraft.CraftQualityMin3}");
+                    ImGui.Text($"Flags: {Crafting.CurCraft.ConditionFlags}");
+                    ImGui.Text($"Material Miracle Charges: {Crafting.CurStep.MaterialMiracleCharges}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))
@@ -269,7 +329,7 @@ namespace Artisan.UI
 
                 if (ImGui.CollapsingHeader("Gear"))
                 {
-                    ImGui.TextUnformatted($"In-game stats: {CharacterInfo.Craftsmanship}/{CharacterInfo.Control}/{CharacterInfo.MaxCP}");
+                    ImGui.TextUnformatted($"In-game stats: {CharacterInfo.Craftsmanship}/{CharacterInfo.Control}/{CharacterInfo.MaxCP}/{CharacterInfo.FCCraftsmanshipbuff}");
                     DrawEquippedGear();
                     foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
                         DrawGearset(ref gs);
@@ -303,11 +363,15 @@ namespace Artisan.UI
                 {
                     CraftingListFunctions.OpenRecipeByID(Endurance.RecipeID);
                 }
+                if (ImGui.Button($"Craft X IPC"))
+                {
+                    IPC.IPC.CraftX((ushort)DebugValue, 1);
+                }
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
                 if (ImGui.Button($"Open Recipe"))
                 {
-                    AgentRecipeNote.Instance()->OpenRecipeByRecipeId((uint)DebugValue);
+                    PreCrafting.TaskSelectRecipe(Svc.Data.GetExcelSheet<Recipe>().GetRow((uint)DebugValue));
                 }
 
                 ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");
@@ -351,7 +415,6 @@ namespace Artisan.UI
                     ImGui.Text($"{list->ListLength}");
                 }
 
-                Util.ShowObject(Svc.Data.Excel.GetSheet<Recipe>().First(x => x.RowId == Endurance.RecipeID));
             }
             catch (Exception e)
             {
@@ -366,6 +429,8 @@ namespace Artisan.UI
             {
                 TeleportToGCTown();
             }
+
+            Util.ShowStruct(WKSManager.Instance());
         }
 
         public unsafe static void TeleportToGCTown()
@@ -395,7 +460,6 @@ namespace Artisan.UI
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)
         {
-            Svc.Log.Debug($"{e->RecipeId}");
             var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
             using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name.ToDalamudString()}'###{tag}");
             if (!n)
@@ -437,6 +501,8 @@ namespace Artisan.UI
                 var startingQuality = Calculations.GetStartingQuality(recipe.Value, e->GetAssignedHQIngredients());
                 using var n2 = ImRaii.TreeNode($"Starting quality: {startingQuality}/{Calculations.RecipeMaxQuality(recipe.Value)}", ImGuiTreeNodeFlags.Leaf);
             }
+
+            Util.ShowObject(recipe.Value.RecipeLevelTable.Value);
         }
 
         private static void DrawEquippedGear()
@@ -446,7 +512,7 @@ namespace Artisan.UI
                 return;
 
             var stats = CharacterStats.GetBaseStatsEquipped();
-            ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+            ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.SplendorCosmic}/{stats.Specialist}");
 
             var inventory = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
             if (inventory == null)
@@ -462,6 +528,7 @@ namespace Artisan.UI
                 using var n = ImRaii.TreeNode($"{i}: {item->ItemId} '{details.Data.Value.Name}' ({item->Flags}): crs={details.Stats[0].Base}+{details.Stats[0].Melded}/{details.Stats[0].Max}, ctrl={details.Stats[1].Base}+{details.Stats[1].Melded}/{details.Stats[1].Max}, cp={details.Stats[2].Base}+{details.Stats[2].Melded}/{details.Stats[2].Max}");
                 if (n)
                 {
+                    ImGui.Text($"{details.Data.Value.LevelEquip} {details.Data.Value.Rarity}");
                     for (int j = 0; j < 5; ++j)
                     {
                         using var m = ImRaii.TreeNode($"Materia {j}: {item->Materia[j]} {item->MateriaGrades[j]}", ImGuiTreeNodeFlags.Leaf);
@@ -482,7 +549,7 @@ namespace Artisan.UI
                     return;
 
                 var stats = CharacterStats.GetBaseStatsGearset(ref gs);
-                ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+                ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.SplendorCosmic}/{stats.Specialist}");
 
                 for (int i = 0; i < gs.Items.Length; ++i)
                 {

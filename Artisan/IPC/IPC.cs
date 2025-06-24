@@ -1,6 +1,8 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
+using Dalamud.Game.ClientState.Conditions;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using OtterGui;
@@ -44,6 +46,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetStopRequest").RegisterAction(SetStopRequest);
 
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").RegisterAction(CraftX);
+            Svc.PluginInterface.GetIpcProvider<bool>("Artisan.IsBusy").RegisterFunc(IsBusy);
         }
 
         internal static void Dispose()
@@ -59,6 +62,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetStopRequest").UnregisterAction();
 
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.IsBusy").UnregisterFunc();
         }
 
         static bool GetEnduranceStatus()
@@ -106,10 +110,8 @@ namespace Artisan.IPC
         {
             if (LuminaSheets.RecipeSheet!.FindFirst(x => x.Value.RowId == recipeId, out var recipe))
             {
-                P.TM.Enqueue(() =>
-                {
-                    CraftingListFunctions.OpenRecipeByID(recipeId);
-                });
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe.Value), TimeSpan.FromMilliseconds(500)));
+                P.TM.Enqueue(() => PreCrafting.Tasks.Count == 0);
                 P.TM.DelayNext(100);
                 P.TM.Enqueue(() =>
                 {
@@ -124,6 +126,11 @@ namespace Artisan.IPC
             {
                 throw new Exception("RecipeID not found.");
             }
+        }
+
+        public static bool IsBusy()
+        {
+            return Endurance.Enable || CraftingListUI.Processing || P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || !(Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal);
         }
 
         public enum ArtisanMode

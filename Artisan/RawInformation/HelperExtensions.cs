@@ -1,4 +1,5 @@
-﻿using Lumina.Excel.Sheets;
+﻿using System;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,31 @@ namespace Artisan.RawInformation
 {
     internal static class HelperExtensions
     {
+        public static int FindClosestIndex(this List<int> list, int valueToFind)
+        {
+            int closestIndex = 0;
+            int smallestDifference = int.MaxValue;
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                int currentDifference = Math.Abs(list[i] - valueToFind);
+                if (currentDifference < smallestDifference)
+                {
+                    smallestDifference = list[i];
+                    closestIndex = i;
+                }
+            }
+
+            return closestIndex;
+        }
+
+        public static int GetByIndexOrDefault(this List<int> list, int index, int defaultValue = 0)
+        {
+            if (index < 0 || index >= list.Count)
+                return defaultValue;
+            return list[index];
+        }
+
         public static string GetNumbers(this string input)
         {
             if (input == null) return "";

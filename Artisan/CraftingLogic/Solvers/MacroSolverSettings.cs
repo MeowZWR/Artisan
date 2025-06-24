@@ -21,6 +21,7 @@ public class MacroSolverSettings
         public bool UpgradeProgressActions = false;
         public bool SkipObservesIfNotPoor = false;
         public int MinCraftsmanship = 0;
+        public int ExactCraftsmanship = 0;
         public int MinControl = 0;
         public int MinCP = 0;
     }
@@ -39,6 +40,19 @@ public class MacroSolverSettings
         public bool ExcludeMalleable = false;
         public bool ExcludePrimed = false;
         public bool ExcludeGoodOmen = false;
+        public bool ReplaceOnExclude = false;
+        public Skills ReplacementAction = Skills.None;
+
+        public bool HasExcludeCondition =>  ExcludeNormal ||
+                                            ExcludeGood ||
+                                            ExcludePoor  ||
+                                            ExcludeExcellent ||
+                                            ExcludeCentered ||
+                                            ExcludeSturdy ||
+                                            ExcludePliant||
+                                            ExcludeMalleable ||
+                                            ExcludePrimed ||
+                                            ExcludeGoodOmen;
     }
 
     public List<Macro> Macros = new();

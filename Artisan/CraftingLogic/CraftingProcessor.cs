@@ -1,8 +1,10 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
+using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
+using ECommons.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,18 +30,19 @@ public static class CraftingProcessor
     public delegate void RecommendationReadyDelegate(Lumina.Excel.Sheets.Recipe recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation);
     public static event RecommendationReadyDelegate? RecommendationReady;
 
-    private static List<ISolverDefinition> _solverDefs = new();
+    public static List<ISolverDefinition> SolverDefinitions = new();
     private static Solver? _activeSolver; // solver for current or expected crafting session
     private static uint? _expectedRecipe; // non-null and equal to recipe id if we've requested start of a specific craft (with a specific solver) and are waiting for it to start
     private static Solver.Recommendation _nextRec;
 
     public static void Setup()
     {
-        _solverDefs.Add(new StandardSolverDefinition());
-        _solverDefs.Add(new ProgressOnlySolverDefinition());
-        _solverDefs.Add(new ExpertSolverDefinition());
-        _solverDefs.Add(new MacroSolverDefinition());
-        _solverDefs.Add(new ScriptSolverDefinition());
+        SolverDefinitions.Add(new StandardSolverDefinition());
+        SolverDefinitions.Add(new ProgressOnlySolverDefinition());
+        SolverDefinitions.Add(new ExpertSolverDefinition());
+        SolverDefinitions.Add(new MacroSolverDefinition());
+        SolverDefinitions.Add(new ScriptSolverDefinition());
+        SolverDefinitions.Add(new RaphaelSolverDefintion());
 
         Crafting.CraftStarted += OnCraftStarted;
         Crafting.CraftAdvanced += OnCraftAdvanced;
@@ -55,7 +58,7 @@ public static class CraftingProcessor
 
     public static IEnumerable<ISolverDefinition.Desc> GetAvailableSolversForRecipe(CraftState craft, bool returnUnsupported, Type? skipSolver = null)
     {
-        foreach (var solver in _solverDefs)
+        foreach (var solver in SolverDefinitions)
         {
             if (solver.GetType() == skipSolver)
                 continue;
@@ -73,9 +76,10 @@ public static class CraftingProcessor
 
     public static ISolverDefinition.Desc? FindSolver(CraftState craft, string type, int flavour)
     {
-        var solver = type.Length > 0 ? _solverDefs.Find(s => s.GetType().FullName == type) : null;
+        var solver = type.Length > 0 ? SolverDefinitions.Find(s => s.GetType().FullName == type) : null;
         if (solver == null)
             return null;
+
         foreach (var f in solver.Flavours(craft).Where(f => f.Flavour == flavour))
             return f;
         return null;
@@ -96,7 +100,7 @@ public static class CraftingProcessor
 
     private static void OnCraftStarted(Lumina.Excel.Sheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial)
     {
-        Svc.Log.Debug($"[CProc] OnCraftStarted #{recipe.RowId} '{recipe.ItemResult.Value.Name.ToDalamudString()}' (trial={trial})");
+        Svc.Log.Debug($"[CProc] OnCraftStarted #{recipe.RowId} '{recipe.ItemResult.Value.Name.ToDalamudString()}' (trial={trial}) (cosmic={craft.IsCosmic}) (IQ={craft.InitialQuality}) (PQ={craft.CraftProgress}/{craft.CraftQualityMax})");
         if (_expectedRecipe != null && _expectedRecipe.Value != recipe.RowId)
         {
             Svc.Log.Error($"Unexpected recipe started: expected {_expectedRecipe}, got {recipe.RowId}");
@@ -104,7 +108,6 @@ public static class CraftingProcessor
             ActiveSolver = new("");
         }
         _expectedRecipe = null;
-
         // we don't want any solvers running with broken gear
         if (RepairManager.GetMinEquippedPercent() == 0)
         {
@@ -127,9 +130,24 @@ public static class CraftingProcessor
             ActiveSolver = new(autoSolver.Name, _activeSolver);
         }
 
+        if (_activeSolver is ICraftValidator validator)
+        {
+            Svc.Log.Information("Validation");
+            var validation = validator.Validate(craft);
+            if (!validation)
+            {
+                SolverFailed?.Invoke(recipe, "You have mismatched stats");
+                _activeSolver = null;
+                ActiveSolver = new("");
+                return;
+            }
+        }
+
         SolverStarted?.Invoke(recipe, ActiveSolver, craft, initialStep);
 
         _nextRec = _activeSolver.Solve(craft, initialStep);
+        if (Simulator.CannotUseAction(craft, initialStep, _nextRec.Action, out string reason))
+            DuoLog.Error($"Unable to use {_nextRec.Action.NameOfAction()}: {reason}");
         if (_nextRec.Action != Skills.None)
             RecommendationReady?.Invoke(recipe, ActiveSolver, craft, initialStep, _nextRec);
     }
@@ -144,6 +162,8 @@ public static class CraftingProcessor
 
         _nextRec = _activeSolver.Solve(craft, step);
         Svc.Log.Debug($"Next rec is: {_nextRec.Action}");
+        if (Simulator.CannotUseAction(craft, step, _nextRec.Action, out string reason))
+            DuoLog.Error($"Unable to use {_nextRec.Action.NameOfAction()}: {reason}");
         if (_nextRec.Action != Skills.None)
             RecommendationReady?.Invoke(recipe, ActiveSolver, craft, step, _nextRec);
     }

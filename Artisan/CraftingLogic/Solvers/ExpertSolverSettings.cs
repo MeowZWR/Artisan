@@ -40,10 +40,11 @@ public class ExpertSolverSettings
     public bool MidAllowGoodPrep = true; // if true, we consider prep touch a good move for finisher under good+inno+gs
     public bool MidAllowSturdyPrep = true; // if true, we consider prep touch a good move for finisher under sturdy+inno
     public bool MidGSBeforeInno = true; // if true, we start quality combos with gs+inno rather than just inno
-    public bool MidFinishProgressBeforeQuality = true; // if true, at 10 iq we first finish progress before starting on quality
+    public bool MidFinishProgressBeforeQuality = false; // if true, at 10 iq we first finish progress before starting on quality
     public bool MidObserveGoodOmenForTricks = false; // if true, we'll observe on good omen where otherwise we'd use tricks on good
     public bool FinisherBaitGoodByregot = true; // if true, use careful observations to try baiting good byregot
     public bool EmergencyCPBaitGood = false; // if true, we allow spending careful observations to try baiting good for tricks when we really lack cp
+    public bool UseMaterialMiracle = false;
 
     [NonSerialized]
     public IDalamudTextureWrap? expertIcon;
@@ -112,6 +113,7 @@ public class ExpertSolverSettings
         ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
         changed |= ImGui.Checkbox($"Finisher: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.ByregotsBlessing.NameOfAction()}", ref FinisherBaitGoodByregot);
         changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
+        changed |= ImGui.Checkbox($"Use Material Miracle in Cosmic Exploration", ref UseMaterialMiracle);
         if (ImGuiEx.ButtonCtrl("Reset Expert Solver Settings To Default"))
         {
             P.Config.ExpertSolverConfig = new();
