@@ -1,0 +1,36 @@
+name: .NET Build
+
+on:
+  push:
+    branches: '*'
+    tags-ignore: '*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '9.x.x'
+      - name: Restore dependencies
+        run: dotnet restore Artisan.sln
+      - name: Download Dalamud
+        run: |
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile latest.zip
+          Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
+      - name: Build
+        run: |
+          dotnet build Artisan.sln --no-restore --configuration Release --nologo
+      - name: Archive
+        run: Compress-Archive -Path Artisan/bin/Release/* -DestinationPath Artisan.zip
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            ./Artisan/bin/Release/* 
+            
