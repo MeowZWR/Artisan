@@ -6,12 +6,12 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverDefinition : ISolverDefinition
 {
-    public string MouseoverDescription { get; set; } = "This is for expert recipes, it is not a more advanced standard recipe solver.";
+    public string MouseoverDescription { get; set; } = "这是用于专家配方的，它不是更高级的标准配方求解器。";
 
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         if (craft.CraftExpert)
-            yield return new(this, 0, 2, "Expert Recipe Solver", craft.StatLevel < 90 ? "Requires Level 90" : !craft.UnlockedManipulation ? "You need to unlock Manipulation" : "");
+            yield return new(this, 0, 2, "专家配方求解器", craft.StatLevel < 90 ? "需要等级 90" : !craft.UnlockedManipulation ? "您需要解锁操作" : "");
     }
 
     public Solver Create(CraftState craft, int flavour) => new ExpertSolver();

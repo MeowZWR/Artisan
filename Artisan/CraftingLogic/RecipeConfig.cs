@@ -252,7 +252,7 @@ public class RecipeConfig
                 if (opt == default) continue;
                 if (opt.UnsupportedReason.Length > 0)
                 {
-                    ImGui.Text($"{opt.Name} is unsupported - {opt.UnsupportedReason}");
+                    ImGui.Text($"{opt.Name} 不受支持 - {opt.UnsupportedReason}");
                 }
                 else
                 {
@@ -283,15 +283,15 @@ public class RecipeConfig
             var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
             var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
 
-            if (solver.Name != "Expert Recipe Solver")
+            if (solver.Name != "专家配方求解器")
             {
-                if (craft.MissionHasMaterialMiracle && solver.Name == "Standard Recipe Solver" && P.Config.UseMaterialMiracle)
-                    ImGuiEx.TextWrapped($"This would use Material Miracle, which is not compatible with the simulator.");
+                if (craft.MissionHasMaterialMiracle && solver.Name == "标准配方求解器" && P.Config.UseMaterialMiracle)
+                    ImGuiEx.TextWrapped($"这将使用材料奇迹，与模拟器不兼容。");
                 else
                     ImGuiEx.TextWrapped(hintColor, solverHint);
             }
             else
-                ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
+                ImGuiEx.TextWrapped($"请在模拟器中运行此配方以获得结果。");
 
             if (ImGui.IsItemClicked())
             {
@@ -334,7 +334,7 @@ public class RecipeConfig
 
             if (ImGui.IsItemHovered())
             {
-                ImGuiEx.Tooltip($"Click to open in simulator");
+                ImGuiEx.Tooltip($"点击在模拟器中打开");
             }
 
 

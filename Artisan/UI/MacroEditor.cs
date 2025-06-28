@@ -282,7 +282,7 @@ namespace Artisan.UI
                                         P.Config.Save();
                                     }
 
-                                    ImGuiComponents.HelpMarker("Uses a recommendation from the appropriate default solver, i.e Standard Recipe Solver for regular recipes, Expert Recipe Solver for expert recipes.");
+                                    ImGuiComponents.HelpMarker("适当使用默认解算器的推荐，即常规配方使用标准配方解算器，专家配方使用专家配方解算器。");
 
                                     if (ImGui.Selectable($"Touch Combo"))
                                     {

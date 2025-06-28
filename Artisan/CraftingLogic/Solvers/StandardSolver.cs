@@ -13,7 +13,7 @@ namespace Artisan.CraftingLogic.Solvers
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             if (!craft.CraftExpert && craft.CraftHQ)
-                yield return new(this, 0, 2, "标准配方解算器");
+                yield return new(this, 0, 2, "标准配方求解器");
         }
 
         public Solver Create(CraftState craft, int flavour) => new StandardSolver(flavour != 0);

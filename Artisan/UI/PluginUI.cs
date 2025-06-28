@@ -692,7 +692,7 @@ namespace Artisan.UI
                 if (ImGui.Checkbox($"Use Material Miracle when available", ref P.Config.UseMaterialMiracle))
                     P.Config.Save();
 
-                ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff. This will not give you proper simulator results as it's a timed buff, not a permanent one with stacks, so we can't really simulate it properly.");
+                ImGuiComponents.HelpMarker($"这将在增益持续时间内将标准配方求解器切换到专家求解器。由于这是一个定时增益，而不是具有层数的永久增益，因此不会给您提供正确的模拟器结果，我们无法真正正确模拟它。");
 
                 if (P.Config.UseMaterialMiracle)
                 {
@@ -716,7 +716,7 @@ namespace Artisan.UI
                 // 移除图标显示代码
             }
 
-            if (ImGui.CollapsingHeader("Raphael Solver Settings"))
+            if (ImGui.CollapsingHeader("Raphael 求解器设置"))
             {
                 if (P.Config.RaphaelSolverConfig.Draw())
                     P.Config.Save();
@@ -820,7 +820,7 @@ namespace Artisan.UI
                     if (ImGui.Checkbox($"隐藏技能提示窗口", ref P.Config.DisableSimulatorActionTooltips))
                         P.Config.Save();
 
-                    ImGuiComponents.HelpMarker("When hovering over actions in manual mode, the description tooltip will not show.");
+                    ImGuiComponents.HelpMarker("在手动模式下鼠标悬停在技能上时，描述提示窗口将不会显示。");
                 }
                 ImGui.Unindent();
             }

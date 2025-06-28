@@ -1292,20 +1292,20 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
         
-        ImGuiEx.TextV("Requirements:");
+        ImGuiEx.TextV("制作要求：");
         ImGui.SameLine();
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0, ImGui.GetStyle().ItemSpacing.Y));
         ImGui.SameLine(137.6f.Scale());
-        ImGui.TextWrapped($"Difficulty: {craft.CraftProgress} | Durability: {craft.CraftDurability} | Quality: {(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)}");
-        ImGuiComponents.HelpMarker($"Shows the crafting requirements: Progress needed to complete the craft, how much Durability the recipe has, and Quality target required to reach the highest Quality level (In case of a Collectible). Use this information to select an appropriate macro, if desired.");
+        ImGui.TextWrapped($"制作力：{craft.CraftProgress} | 耐久度：{craft.CraftDurability} | 品质：{(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)}");
+        ImGuiComponents.HelpMarker($"显示制作要求：完成制作所需的制作力、配方的耐久度，以及达到最高品质等级所需的品质目标（在收藏品的情况下）。您可以使用这些信息来选择合适的宏。");
 
-        ImGui.Checkbox($"Assume Max Starting Quality (for simulator)", ref hqSim);
+        ImGui.Checkbox($"假设最大起始品质（用于模拟器）", ref hqSim);
 
         var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor, hqSim);
         if (!recipe.IsExpert)
             ImGuiEx.TextWrapped(hintColor, solverHint);
         else
-            ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
+            ImGuiEx.TextWrapped($"请在模拟器中运行此配方以获得结果。");
     }
 
     private void DrawRecipeSettingsHeader()
