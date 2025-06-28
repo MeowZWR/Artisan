@@ -50,10 +50,10 @@ public class RecipeConfig
     public bool RequiredPotionHQ => requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotionHQ : requiredPotionHQ;
 
 
-    public string FoodName => requiredFood == Default ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == Disabled ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}";
-    public string PotionName => requiredPotion == Default ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}";
-    public string ManualName => requiredManual == Default ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}";
-    public string SquadronManualName => requiredSquadronManual == Default ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}";
+    public string FoodName => requiredFood == Default ? $"{P.Config.DefaultConsumables.FoodName} (默认)" : RequiredFood == Disabled ? "已禁用" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}";
+    public string PotionName => requiredPotion == Default ? $"{P.Config.DefaultConsumables.PotionName} (默认)" : RequiredPotion == Disabled ? "已禁用" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}";
+    public string ManualName => requiredManual == Default ? $"{P.Config.DefaultConsumables.ManualName} (默认)" : RequiredManual == Disabled ? "已禁用" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}";
+    public string SquadronManualName => requiredSquadronManual == Default ? $"{P.Config.DefaultConsumables.SquadronManualName} (默认)" : RequiredSquadronManual == Disabled ? "已禁用" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}";
 
 
 
