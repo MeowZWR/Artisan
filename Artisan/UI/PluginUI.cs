@@ -708,21 +708,12 @@ namespace Artisan.UI
             if (ImGui.CollapsingHeader("专家配方解算器设置"))
             {
                 openExpert = true;
-                if (P.Config.ExpertSolverConfig.expertIcon is not null)
-                {
-                    ImGui.SameLine();
-                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.ImGuiHandle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
-                }
                 if (P.Config.ExpertSolverConfig.Draw())
                     P.Config.Save();
             }
             if (!openExpert)
             {
-                if (P.Config.ExpertSolverConfig.expertIcon is not null)
-                {
-                    ImGui.SameLine();
-                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.ImGuiHandle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
-                }
+                // 移除图标显示代码
             }
 
             if (ImGui.CollapsingHeader("Raphael Solver Settings"))
