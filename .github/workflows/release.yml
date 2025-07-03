@@ -93,7 +93,7 @@ jobs:
         run: |
           repo_owner="MeowZWR"
           repo_name="DalamudPlugin"
-          event_type="request-update-pants-action"
+          event_type="request-update-run-action"
           curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
