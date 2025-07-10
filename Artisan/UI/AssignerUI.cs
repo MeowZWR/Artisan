@@ -37,7 +37,8 @@ namespace Artisan.UI
 
         public static void Draw()
         {
-            ImGuiEx.TextWrapped($"This tab allows you to quickly assign solvers and consumables to recipes based on recipe criteria.");
+            ImGuiEx.TextWrapped($"本标签页可根据配方条件，快速为配方批量分配解算器与消耗品。");
+            ImGuiEx.TextWrapped($"职业缩写对照：CRP - 刻木匠；ARM - 铸甲匠；LTW - 制革匠；ALC - 炼金术士；BSM - 锻铁匠；GSM - 雕金匠；WVR - 裁衣匠；CUL - 烹调师。");
             ImGui.Separator();
             ImGui.Spacing();
             DrawCriteria();
@@ -46,7 +47,7 @@ namespace Artisan.UI
 
         private static void DrawCriteria()
         {
-            ImGuiEx.TextCentered($"Criteria");
+            ImGuiEx.TextCentered($"条件");
             DrawAssignOptions();
         }
 
@@ -67,8 +68,8 @@ namespace Artisan.UI
             DummyConfig.DrawSquadronManual();
             DummyConfig.DrawSolver(c, false, false);
 
-            ImGui.Checkbox("Show which crafts have been assigned as a notification", ref Notification);
-            if (ImGui.Button("Assign To All", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
+            ImGui.Checkbox("分配配方时显示通知", ref Notification);
+            if (ImGui.Button("全部分配", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
             {
                 foreach (var rec in filteredRecipes)
                 {

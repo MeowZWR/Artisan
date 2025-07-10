@@ -300,19 +300,19 @@ public static class Simulator
         {
             reason = action switch
             {
-                Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade => "Condition is not Good/Excellent or Heart and Soul is not active",
-                Skills.PrudentSynthesis or Skills.PrudentTouch => "You have a Waste Not buff",
-                Skills.MuscleMemory or Skills.Reflect => "You are not on the first step of the craft",
-                Skills.TrainedFinesse => "You have less than 10 Inner Quiet stacks",
-                Skills.ByregotsBlessing => "You have 0 Inner Quiet stacks",
-                Skills.TrainedEye => craft.CraftExpert ? "Craft is expert" : step.Index != 1 ? "You are not on the first step of the craft" : "Craft is not 10 or more levels lower than your current level",
-                Skills.Manipulation => "You haven't unlocked Manipulation",
-                Skills.CarefulObservation => craft.Specialist ? Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : $"You already used Careful Observation 3 times" : "You are not a specialist",
-                Skills.HeartAndSoul => craft.Specialist ? Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : "You don't have Heart & Soul available anymore for this craft" : "You are not a specialist",
-                Skills.TrainedPerfection => "You have already used Trained Perfection",
-                Skills.DaringTouch => "Hasty Touch did not succeed",
-                Skills.QuickInnovation => !craft.Specialist ? "You are not a specialist" : Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : step.QuickInnoLeft == 0 ? "You don't have Quick Innovation available anymore for this craft" : step.InnovationLeft > 0 ? "You have an Innovation buff" : "",
-                Skills.MaterialMiracle => !craft.MissionHasMaterialMiracle ? "This craft cannot use Material Miracle" : step.MaterialMiracleActive ? "You already have Material Miracle active" : step.MaterialMiracleCharges == 0 ? "You have no more charges" : ""
+                Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade => "当前状态不是良好/绝佳，或未激活专心致志",
+                Skills.PrudentSynthesis or Skills.PrudentTouch => "你拥有俭约状态",
+                Skills.MuscleMemory or Skills.Reflect => "你不在制作的第一步",
+                Skills.TrainedFinesse => "你的内静层数不足10层",
+                Skills.ByregotsBlessing => "你的内静层数为0",
+                Skills.TrainedEye => craft.CraftExpert ? "该配方为专家配方" : step.Index != 1 ? "你不在制作的第一步" : "配方等级未比你当前等级低10级或以上",
+                Skills.Manipulation => "你尚未解锁掌握",
+                Skills.CarefulObservation => craft.Specialist ? Crafting.DelineationCount() == 0 ? "你的能工巧匠图纸已用尽。" : $"你已使用设计变动3次" : "你不是专家",
+                Skills.HeartAndSoul => craft.Specialist ? Crafting.DelineationCount() == 0 ? "你的能工巧匠图纸已用尽。" : "本次制作已无法再次使用专心致志" : "你不是专家",
+                Skills.TrainedPerfection => "你已使用过工匠的神技",
+                Skills.DaringTouch => "仓促制作未成功",
+                Skills.QuickInnovation => !craft.Specialist ? "你不是专家" : Crafting.DelineationCount() == 0 ? "你的能工巧匠图纸已用尽。" : step.QuickInnoLeft == 0 ? "本次制作已无法再次使用快速改革" : step.InnovationLeft > 0 ? "你已有改革状态" : "",
+                Skills.MaterialMiracle => !craft.MissionHasMaterialMiracle ? "本次制作无法使用素材奇迹" : step.MaterialMiracleActive ? "你已激活素材奇迹" : step.MaterialMiracleCharges == 0 ? "你已没有剩余的素材奇迹次数" : ""
             };
 
             return true;
