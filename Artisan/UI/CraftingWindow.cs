@@ -136,7 +136,7 @@ namespace Artisan.UI
             if (_estimatedCraftEnd != default)
             {
                 var diff = _estimatedCraftEnd - DateTime.Now;
-                string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", diff.Hours, diff.Minutes, diff.Seconds);
+                string duration = string.Format("{0:D2}时 {1:D2}分 {2:D2}秒", diff.Hours, diff.Minutes, diff.Seconds);
                 ImGui.Text($"大致剩余时间：{duration}");
             }
 

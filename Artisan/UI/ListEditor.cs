@@ -902,7 +902,7 @@ internal class ListEditor : Window, IDisposable
 
         if (ImGui.GetIO().KeyShift)
         {
-            if (ImGui.Button($"Export Required Ingredients as Plain Text"))
+            if (ImGui.Button($"导出需要的素材到剪贴板"))
             {
                 StringBuilder sb = new();
                 foreach (var item in Table.ListItems.Where(x => x.Required > 0))
@@ -913,17 +913,17 @@ internal class ListEditor : Window, IDisposable
                 if (!string.IsNullOrEmpty(sb.ToString()))
                 {
                     ImGui.SetClipboardText(sb.ToString());
-                    Notify.Success($"Required items copied to clipboard.");
+                    Notify.Success($"所需物品已复制到剪贴板");
                 }
                 else
                 {
-                    Notify.Error($"No items required to be copied.");
+                    Notify.Error($"没有需要复制的物品");
                 }
             }
         }
         else
         {
-            if (ImGui.Button($"Export Remaining Ingredients as Plain Text"))
+            if (ImGui.Button($"导出缺少的素材到剪贴板"))
             {
                 StringBuilder sb = new();
                 foreach (var item in Table.ListItems.Where(x => x.Remaining > 0))
@@ -934,17 +934,17 @@ internal class ListEditor : Window, IDisposable
                 if (!string.IsNullOrEmpty(sb.ToString()))
                 {
                     ImGui.SetClipboardText(sb.ToString());
-                    Notify.Success($"Remaining items copied to clipboard.");
+                    Notify.Success($"缺少的物品已复制到剪贴板");
                 }
                 else
                 {
-                    Notify.Error($"No items remaining to be copied.");
+                    Notify.Error($"没有缺少的物品需要复制");
                 }
             }
 
             if (ImGui.IsItemHovered())
             {
-                ImGuiEx.Tooltip($"Hold shift to change from remaining to required.");
+                ImGuiEx.Tooltip($"按住Shift键可以切换为导出需要的全部物品");
             }
 
         }
@@ -1434,7 +1434,7 @@ internal class RecipeSelector : ItemSelector<ListItem>
         using (var col = ImRaii.PushColor(ImGuiCol.Text, itemCount == 0 || ItemId.ListItemOptions.Skipping ? ImGuiColors.DalamudRed : ImGuiColors.DalamudWhite))
         {
             var res = ImGui.Selectable(label, idx == CurrentIdx);
-            ImGuiEx.Tooltip($"Right click to {(ItemId.ListItemOptions.Skipping ? "enable" : "skip")} this recipe.");
+            ImGuiEx.Tooltip($"右键点击以{(ItemId.ListItemOptions.Skipping ? "启用" : "跳过")}此配方");
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
                 ItemId.ListItemOptions.Skipping = !ItemId.ListItemOptions.Skipping;

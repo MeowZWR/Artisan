@@ -35,8 +35,8 @@ namespace Artisan.Autocraft
                         if (Endurance.Enable && P.Config.EnduranceStopNQ && !item.IsHQ)
                         {
                             Endurance.ToggleEndurance(false);
-                            Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
-                            DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
+                            Svc.Toasts.ShowError("你制作出了一个NQ物品。已禁用耐力模式。");
+                            DuoLog.Error("你制作出了一个NQ物品。已禁用耐力模式。");
                         }
                     }
                 }
@@ -73,14 +73,14 @@ namespace Artisan.Autocraft
                 if (cancelled)
                 {
                     Endurance.ToggleEndurance(false);
-                    Svc.Toasts.ShowError("You've cancelled a craft. Disabling Endurance.");
-                    DuoLog.Error("You've cancelled a craft. Disabling Endurance.");
+                    Svc.Toasts.ShowError("你已取消制作。已禁用耐力模式。");
+                    DuoLog.Error("你已取消制作。已禁用耐力模式。");
                 }
                 else if (finalStep.Progress < craft.CraftProgress && P.Config.EnduranceStopFail)
                 {
                     Endurance.ToggleEndurance(false);
-                    Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
-                    DuoLog.Error("You failed a craft. Disabling Endurance.");
+                    Svc.Toasts.ShowError("出现制作失败。已禁用耐力模式。");
+                    DuoLog.Error("出现制作失败。已禁用耐力模式。");
                 }
                 else if (P.Config.CraftingX && P.Config.CraftX > 0)
                 {
@@ -91,7 +91,7 @@ namespace Artisan.Autocraft
                         Endurance.ToggleEndurance(false);
                         if (P.Config.PlaySoundFinishEndurance)
                             SoundPlayer.PlaySound();
-                        DuoLog.Information("Craft X has completed.");
+                        DuoLog.Information("制作X次已完成。");
 
                     }
                 }
