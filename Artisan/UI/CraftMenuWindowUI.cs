@@ -105,14 +105,14 @@ namespace Artisan.UI
 				bool useMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? P.Config.ExpertSolverConfig.UseMaterialMiracle : P.Config.UseMaterialMiracle;
 				int delayMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? P.Config.ExpertSolverConfig.MinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
 				bool multiMatMiracle = P.Config.MaterialMiracleMulti;
-				if (ImGui.Checkbox("使用材料奇迹(到底叫啥啊没玩宇宙探索不知道)", ref useMatMiracle))
+				if (ImGui.Checkbox("使用奇迹之材", ref useMatMiracle))
 				{
 					if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
 						P.Config.ExpertSolverConfig.UseMaterialMiracle = useMatMiracle;
 					else
 						P.Config.UseMaterialMiracle = useMatMiracle;
 				}
-				if (ImGui.SliderInt("执行材料奇迹前的最少步数", ref delayMatMiracle, 0, 20))
+				if (ImGui.SliderInt("执行奇迹之材前的最少步数", ref delayMatMiracle, 0, 20))
 				{
 					if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
 						P.Config.ExpertSolverConfig.MinimumStepsBeforeMiracle = delayMatMiracle;
@@ -122,7 +122,7 @@ namespace Artisan.UI
 
 				if (false == LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
 				{
-					if (ImGui.Checkbox("多次使用材料奇迹", ref multiMatMiracle))
+					if (ImGui.Checkbox("多次使用奇迹之材", ref multiMatMiracle))
 						P.Config.MaterialMiracleMulti = multiMatMiracle;
 				}
 			}
