@@ -874,7 +874,7 @@ namespace Artisan.UI
 
                 if (validGS == 0)
                 {
-                    ImGuiEx.Text($"请为 {LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Abbreviation} 添加一个装备套装");
+                    ImGuiEx.Text($"请为 {LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Name} 添加一个装备套装");
                     SimGS = null;
                     return;
                 }
@@ -1078,7 +1078,7 @@ namespace Artisan.UI
         {
             var preview = SelectedRecipe is null
                                       ? string.Empty
-                                      : $"{SelectedRecipe?.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Abbreviation.ToString()})";
+                                      : $"{SelectedRecipe?.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Name.ToString()})";
 
             ImGuiEx.Text($"选择配方");
             ImGui.SameLine(120f.Scale());
@@ -1100,7 +1100,7 @@ namespace Artisan.UI
                     foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                     {
                         ImGui.PushID($"###simRecipe{recipe.RowId}");
-                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Name.ToString()} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
 
                         if (selected)
                         {

@@ -38,7 +38,6 @@ namespace Artisan.UI
         public static void Draw()
         {
             ImGuiEx.TextWrapped($"本标签页可根据配方条件，快速为配方批量分配解算器与消耗品。");
-            ImGuiEx.TextWrapped($"职业缩写对照：CRP - 刻木匠；ARM - 铸甲匠；LTW - 制革匠；ALC - 炼金术士；BSM - 锻铁匠；GSM - 雕金匠；WVR - 裁衣匠；CUL - 烹调师。");
             ImGui.Separator();
             ImGui.Spacing();
             DrawCriteria();
@@ -83,14 +82,26 @@ namespace Artisan.UI
                         SolverFlavour = DummyConfig.SolverFlavour,
                         SolverType = DummyConfig.SolverType,
                     };
-                    if (Notification)
-                    {
-                        P.TM.Enqueue(() => Notify.Success($"Assigned {rec.CraftType.Value.Name} - {rec.ItemResult.Value.Name}"));
-                        P.TM.DelayNext(75);
-                    }
+                     if (Notification)
+                     {
+                         var job = (Job)((uint)Job.CRP + rec.CraftType.RowId);
+                         P.TM.Enqueue(() => Notify.Success($"已分配 {GetJobName(job)} - {rec.ItemResult.Value.Name}"));
+                         P.TM.DelayNext(75);
+                     }
                 }
                 P.Config.Save();
             }
+        }
+
+        private static string GetJobName(Job job)
+        {
+            // 使用Lumina.Excel.Sheets.ClassJob.Name获取职业全称
+            uint classJobId = (uint)job;
+            if (LuminaSheets.ClassJobSheet?.TryGetValue(classJobId, out var classJob) == true)
+            {
+                return classJob.Name.ToString();
+            }
+            return job.ToString(); // 如果无法获取全称，返回缩写
         }
 
         private static void DrawAssignOptions()
@@ -155,7 +166,7 @@ namespace Artisan.UI
                     ImGui.Columns(4, border:false);
                     for (var job = Job.CRP; job <= Job.CUL; ++job)
                     {
-                        ImGui.Checkbox(job.ToString(), ref quickAssignJobs[job - Job.CRP]);
+                        ImGui.Checkbox(GetJobName(job), ref quickAssignJobs[job - Job.CRP]);
                         ImGui.NextColumn();
                     }
                     ImGui.EndListBox();

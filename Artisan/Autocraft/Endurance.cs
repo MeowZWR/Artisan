@@ -135,7 +135,7 @@ namespace Artisan.Autocraft
 
                 ImGuiComponents.HelpMarker("为了开始耐力模式制作，你应该先在制作菜单中选择一个配方。\n耐力模式将自动地重复制作选择的配方，并且会考虑维持指定的食物/药物buff。");
 
-                ImGuiEx.Text($"配方：{RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.RowId + 8].Abbreviation})" : "")}");
+                ImGuiEx.Text($"配方：{RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.RowId + 8].Name})" : "")}");
             }
 
             bool repairs = P.Config.Repair;
