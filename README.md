@@ -1,5 +1,10 @@
 <!-- Repository Header Begin -->
 <div align="center">
+很久不玩生产，无法及时发现问题并跟进上游更新。
+
+汉化请使用此[仓库](https://github.com/QiongHHHZZZ/DalamudPlugins)的版本。
+
+<br>
 <img src="https://github.com/PunishXIV/Artisan/blob/main/PunishImages/artisan-icon.png?raw=true" alt="Artisan IconUrl" width="15%">
 <br>
 <img src="https://github.com/PunishXIV/Artisan/blob/050a58be7b0ce94c959c17e43dabecb65e38a55c/PunishImages/artisan.png" width="30%" />
